@@ -20,11 +20,11 @@ export async function GET(request: Request) {
   const client = await db.connect();
   try {
       const result = await client.sql`
-DROP TABLE IF EXISTS users
-DROP TABLE IF EXISTS rawDataSourceCategories
-DROP TABLE IF EXISTS rawDataSources
-DROP TABLE IF EXISTS interpretationEngines
-DROP TABLE IF EXISTS interpretationProtocols
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS rawDataSourceCategories;
+DROP TABLE IF EXISTS rawDataSources;
+DROP TABLE IF EXISTS interpretationEngines;
+DROP TABLE IF EXISTS interpretationProtocols;
 
 -- coreTable1
 CREATE TABLE IF NOT EXISTS users(
