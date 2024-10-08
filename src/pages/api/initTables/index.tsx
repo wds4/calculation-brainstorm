@@ -1,36 +1,38 @@
-import { db } from "@vercel/postgres";
-import { NextResponse } from "next/server";
+import { db } from "@vercel/postgres"
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 /*
-CREATE TABLE IF NOT EXISTS users(
-  ID SERIAL PRIMARY KEY,
-  pubkey VARCHAR(255) UNIQUE NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS rawDataSourceCategories(
-  ID SERIAL PRIMARY KEY,
-  SLUG TEXT UNIQUE NOT NULL,
-  NAME TEXT,
-  DESCRIPTION TEXT
-);
+usage:
+http://localhost:3000/api/initTables
+https://calculation-brainstorm.vercel.app/api/initTables
 */
 
-export async function GET(request: Request) {
-  console.log(request)
-  const client = await db.connect();
-  try {
+type ResponseData = {
+    message: string
+}
+
+export default async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse<ResponseData>
+) {
+    const client = await db.connect();
+    try {
       const result = await client.sql`
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS rawDataSourceCategories;
 DROP TABLE IF EXISTS rawDataSources;
 DROP TABLE IF EXISTS interpretationEngines;
 DROP TABLE IF EXISTS interpretationProtocols;
+DROP TABLE IF EXISTS grapeRankProtocols;
+DROP TABLE IF EXISTS parameters;
 
 -- coreTable1
 CREATE TABLE IF NOT EXISTS users(
   ID SERIAL PRIMARY KEY,
   pubkey VARCHAR(255) UNIQUE NOT NULL
 );
+
+INSERT INTO users (pubkey) VALUES ('default'); 
 
 -- coreTable2
 CREATE TABLE IF NOT EXISTS rawDataSourceCategories(
@@ -116,8 +118,8 @@ INSERT INTO grapeRankProtocols (slug, parametersJsonSchema ) VALUES ('basic5Star
 -- coreTable7
 CREATE TABLE IF NOT EXISTS parameters(
   ID SERIAL PRIMARY KEY,
-  userID INT UNIQUE NOT NULL,
-  protocolTableName TEXT NOT NULL, -- 'interpretationProtocols' or 'grapeRankProtocols' or (coreTable5 or coreTable6) 
+  userID INT NOT NULL,
+  protocolCategoryTableName TEXT NOT NULL, -- 'interpretationProtocols' or 'grapeRankProtocols' or (coreTable5 or coreTable6) 
   protocolSlug TEXT NOT NULL, -- [protocolCategoryTableName].slug
   -- protocolID  INT NOT NULL, -- alternate to protocolSlug; [protocolCategoryTableName].id
   
@@ -131,16 +133,21 @@ CREATE TABLE IF NOT EXISTS parameters(
 );
 
 -- defaults
-INSERT INTO protocolParameterSelections (userID, protocolCategoryTableName, protocolSlug, selectedParameters ) VALUES ('default', 'interpretationProtocols', 'basicFollowsInterpretation', '{ "score": 1, "confidence": 0.05 }' );
-INSERT INTO protocolParameterSelections (userID, protocolCategoryTableName, protocolSlug, selectedParameters ) VALUES ('default', 'interpretationProtocols', 'basicMutesInterpretation', '{ "score": 0, "confidence": 0.10 }' );
-INSERT INTO protocolParameterSelections (userID, protocolCategoryTableName, protocolSlug, selectedParameters ) VALUES ('default', 'interpretationProtocols', 'basicReportsInterpretation', '{ "score": 0, "confidence": 0.20 }' );
-INSERT INTO protocolParameterSelections (userID, protocolCategoryTableName, protocolSlug, selectedParameters ) VALUES ('default', 'interpretationProtocols', 'expandedReportsInterpretation', '{ "reportTypesGroupA": { "reportTypes": [ "malware", "illegal", "spam", "impersonation" ], "score": 1, "confidence": 0.5 }, "reportTypesGroupB": { "reportTypes": [ "profanity", "nudity" ], "score": 1, "confidence": 0.02 }, "reportTypesGroupC": { "reportTypes": [ "other" ], "score": 1, "confidence": 0.1 }, }' );
-INSERT INTO protocolParameterSelections (userID, protocolCategoryTableName, protocolSlug, selectedParameters ) VALUES ('default', 'grapeRankProtocols', 'basicGrapevineNetwork', '{ "attenuation": 0.8, "rigor": 0.25, "defaultUserScore": 0, "defaultUserScoreConfidence": 0.01 }' );
-      `;
-      return NextResponse.json({ result }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
-  } finally {
-    client.release();
-  }
+INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicFollowsInterpretation', '{ "score": 1, "confidence": 0.05 }' );
+INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicMutesInterpretation', '{ "score": 0, "confidence": 0.10 }' );
+INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicReportsInterpretation', '{ "score": 0, "confidence": 0.20 }' );
+INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'expandedReportsInterpretation', '{ "reportTypesGroupA": { "reportTypes": [ "malware", "illegal", "spam", "impersonation" ], "score": 1, "confidence": 0.5 }, "reportTypesGroupB": { "reportTypes": [ "profanity", "nudity" ], "score": 1, "confidence": 0.02 }, "reportTypesGroupC": { "reportTypes": [ "other" ], "score": 1, "confidence": 0.1 } }' );
+INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'grapeRankProtocols', 'basicGrapevineNetwork', '{ "attenuation": 0.8, "rigor": 0.25, "defaultUserScore": 0, "defaultUserScoreConfidence": 0.01 }' );
+
+  `;
+      // return NextResponse.json({ result }, { status: 200 });
+      console.log(result)
+      res.status(200).json({ message: 'initTables: All done!' })
+    } catch (error) {
+      // return NextResponse.json({ error }, { status: 500 });
+      console.log(error)
+      res.status(500).json({ message: 'error!' })
+    } finally {
+      client.release();
+    }
 }

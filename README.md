@@ -17,11 +17,31 @@ I followed the tutorial [here](https://www.telerik.com/blogs/integrate-serverles
 - create file at path: `src/app/api/addPet/route.ts`
 - visit `http://localhost:3000/api/addPet?petName=Johnny&ownerName=Mark` which adds a row to the table that was just created
 
+## nostr
+
+```
+npm install @nostr-dev-kit/ndk
+npm install @noble/hashes
+npm install nostr-tools
+npm install nostr-hooks
+```
+
+Thought I needed to do these but I uninstalled them and still seems to work.
+
+```
+npm install ws
+npm install websocket-polyfill 
+# then on any nostr page:
+import 'websocket-polyfill
+```
+
 ## Getting Started
 
 First, run the development server:
 
 ```bash
+vercel dev
+# or
 npm run dev
 # or
 yarn dev
