@@ -17,6 +17,8 @@ I followed the tutorial [here](https://www.telerik.com/blogs/integrate-serverles
 - create file at path: `src/app/api/addPet/route.ts`
 - visit `http://localhost:3000/api/addPet?petName=Johnny&ownerName=Mark` which adds a row to the table that was just created
 
+Switch from `src/app` to `src/pages`
+
 ## nostr
 
 ```
@@ -33,6 +35,26 @@ npm install ws
 npm install websocket-polyfill 
 # then on any nostr page:
 import 'websocket-polyfill
+```
+
+## CORS
+
+To fix CORS problems, add `vercel.json`:
+
+```
+{
+    "headers": [
+        {
+            "source": "/api/(.*)",
+            "headers": [
+                { "key": "Access-Control-Allow-Credentials", "value": "true" },
+                { "key": "Access-Control-Allow-Origin", "value": "*" },
+                { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+                { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+            ]
+        }
+    ]
+}
 ```
 
 ## Getting Started
