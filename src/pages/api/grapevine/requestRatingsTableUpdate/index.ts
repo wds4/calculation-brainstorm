@@ -45,8 +45,10 @@ export default async function handler(
               const oRatingsTable = data.ratingsTable
               const sRatingsTable = JSON.stringify(oRatingsTable)
               // console.log('oRatingsTable: ' + JSON.stringify(oRatingsTable))
-              const result_insert = await client.sql`INSERT INTO ratingsTables (name, pubkey, ratingsTable) VALUES (${ratingsTableName}, ${pubkey1}, ${sRatingsTable}) ON CONFLICT DO NOTHING;`
+              const result_insert = await client.sql`INSERT INTO ratingsTables (name, pubkey) VALUES (${ratingsTableName}, ${pubkey1}) ON CONFLICT DO NOTHING;`
+              const result_update = await client.sql`UPDATE ratingsTables SET ratingsTable=${sRatingsTable} WHERE name=${ratingsTableName} AND pubkey=${pubkey1} ;`
               console.log(result_insert)
+              console.log(result_update)
               res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database; ratingsTable requested from the interp engine; here is what we received: ' + JSON.stringify(data) + '; it was stored locally in sql: ' })
             })
         } else {
