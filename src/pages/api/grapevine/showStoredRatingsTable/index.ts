@@ -39,13 +39,25 @@ export default async function handler(
         if (res1.rowCount) {
           const oRatingsTable = res1.rows[0].ratingstable
           const aContexts = Object.keys(oRatingsTable)
-          const numRaters = -1
-          const numRatees = -1
-          const numRatings = -1
+          let numRaters = 0
+          let numRatings = 0
+          for (let c=0; c < aContexts.length; c++) {
+            const nextContext = aContexts[c]
+            const aRaters = Object.keys(oRatingsTable[nextContext])
+            for (let r=0; r < aRaters.length; r++) {
+              const nextRater = aRaters[r]
+              const aRatees = Object.keys(oRatingsTable[nextContext][nextRater])
+              numRaters++
+              for (let x=0; x < aRatees.length; x++) {
+                // const nextRatee = aRatees[x]
+                numRatings++
+              }
+            }
+          }
+
           const sRatingsTable = JSON.stringify(oRatingsTable)
           const ratingsTableChars = sRatingsTable.length
           const megabyteSize = ratingsTableChars / 1048576
-
           const oDosStats = res1.rows[0].dosstats
           const sDosStats = JSON.stringify(oDosStats)
           const lastUpdated = res1.rows[0].lastupdated
@@ -59,7 +71,6 @@ export default async function handler(
               ratingsTableData: {
                 contexts: aContexts,
                 numRaters: numRaters,
-                numRatees: numRatees,
                 numRatings: numRatings,
                 megabytes: megabyteSize,
                 ratingsTable: sRatingsTable
