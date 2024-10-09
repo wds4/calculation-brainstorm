@@ -25,7 +25,11 @@ export default async function handler(
     // TODO: support npub
   }
   if ((!searchParams.pubkey) || (!searchParams.name)) {
-    res.status(200).json({ message: 'grapevine/showStoredRatingsTable api: name and / or pubkey not provided' })
+    const response:ResponseData = {
+      success: false,
+      message: 'grapevine/showStoredRatingsTable api: name and / or pubkey not provided'
+    }
+    res.status(200).json(response)
   }
   if ((searchParams.pubkey) && (searchParams.name)) {
     // const pubkey1 = 'e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f'
