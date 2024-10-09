@@ -9,5 +9,19 @@
                 { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
             ]
         }
-    ]
+    ],
+    "functions": {
+        "pages/api/grapevine/requestRatingsTableUpdate/index.ts": {
+            "maxDuration": 180
+        },
+        "pages/api/grapevine/showStoredRatingsTable/index.ts": {
+            "maxDuration": 180
+        },
+        "src/pages/api/grapevine/requestRatingsTableUpdate/index.ts": {
+            "maxDuration": 180
+        },
+        "src/pages/api/grapevine/showStoredRatingsTable/index.ts": {
+            "maxDuration": 180
+        }
+    }
 }
