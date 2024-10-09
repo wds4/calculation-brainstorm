@@ -64,7 +64,7 @@ export default async function handler(
           const ratingsTableChars = sRatingsTable.length
           const megabyteSize = ratingsTableChars / 1048576
           const oDosStats = res1.rows[0].dosstats
-          const sDosStats = JSON.stringify(oDosStats)
+          // const sDosStats = JSON.stringify(oDosStats)
           const lastUpdated = res1.rows[0].lastupdated
           const response:ResponseData = {
             success: true,
@@ -73,13 +73,13 @@ export default async function handler(
             data: {
               name: res1.rows[0].name,
               lastUpdated: lastUpdated,
-              dosStats: sDosStats,
+              dosStats: oDosStats,
               ratingsTableData: {
                 contexts: aContexts,
                 numRaters: numRaters,
                 numRatings: numRatings,
                 megabytes: megabyteSize,
-                ratingsTable: sRatingsTable
+                ratingsTable: oRatingsTable
               }
             }
           }
