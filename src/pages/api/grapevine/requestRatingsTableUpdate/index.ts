@@ -56,7 +56,7 @@ export default async function handler(
               console.log('!!!!!!!!!!! ratingsTableName: ' + ratingsTableName)
               console.log('!!!!!!!!!!! sRatingsTable: ' + sRatingsTable)
               console.log('!!!!!!!!!!! sDosStats: ' + sDosStats)
-              res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database; ratingsTable requested from the interp engine; here is what we received: ' + JSON.stringify(data) + '; it was stored locally in sql: ' })
+              res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database; another ratingsTable was requested from the interp engine; it was stored locally in sql.'})
             })
         } else {
           res.status(200).json({ message: `pubkey ${pubkey1} does not yet exist in the calculation engine customer database` })
