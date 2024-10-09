@@ -13,6 +13,7 @@ https://calculation-brainstorm.vercel.app/api/grapevine/showStoredRatingsTable?n
 type ResponseData = {
   success: boolean,
   message: string,
+  exists?: boolean,
   data?: object
 }
 
@@ -68,6 +69,7 @@ export default async function handler(
           const response:ResponseData = {
             success: true,
             message: `Ratings Table found in our database!!`,
+            exists: true,
             data: {
               name: res1.rows[0].name,
               lastUpdated: lastUpdated,
