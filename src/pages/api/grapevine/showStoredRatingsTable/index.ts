@@ -11,7 +11,9 @@ https://calculation-brainstorm.vercel.app/api/grapevine/showStoredRatingsTable?n
 */
 
 type ResponseData = {
-  message: string
+  success: boolean,
+  message: string,
+  data?: object
 }
 
 export default async function handler(
@@ -36,8 +38,35 @@ export default async function handler(
         const res1 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1} AND name=${name}`
         if (res1.rowCount) {
           const oRatingsTable = res1.rows[0].ratingstable
+          const aContexts = Object.keys(oRatingsTable)
+          const numRaters = -1
+          const numRatees = -1
+          const numRatings = -1
           const sRatingsTable = JSON.stringify(oRatingsTable)
-          res.status(200).json({ message: 'Here is the ratings table in our database: ' + sRatingsTable })
+          const ratingsTableChars = sRatingsTable.length
+          const megabyteSize = ratingsTableChars / 1048576
+
+          const oDosStats = res1.rows[0].dosstats
+          const sDosStats = JSON.stringify(oDosStats)
+          const lastUpdated = res1.rows[0].lastupdated
+          const response:ResponseData = {
+            success: true,
+            message: `Ratings Table found in our database!!`,
+            data: {
+              name: res1.rows[0].name,
+              lastUpdated: lastUpdated,
+              dosStats: sDosStats,
+              ratingsTableData: {
+                contexts: aContexts,
+                numRaters: numRaters,
+                numRatees: numRatees,
+                numRatings: numRatings,
+                megabytes: megabyteSize,
+                ratingsTable: sRatingsTable
+              }
+            }
+          }
+          res.status(200).json(response)
         }
       } catch (error) {
         console.log(error)
@@ -45,7 +74,11 @@ export default async function handler(
         client.release();
       }
     } else {
-      res.status(200).json({ message: 'the provided pubkey is invalid' })
+      const response:ResponseData = {
+        success: false,
+        message: `the provided pubkey is invalid`
+      }
+      res.status(200).json(response)
     }
   }
 }

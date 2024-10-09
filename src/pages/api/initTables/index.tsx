@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS ratingsTables(
 -- coreTable1
 CREATE TABLE IF NOT EXISTS users(
   ID SERIAL PRIMARY KEY,
-  pubkey VARCHAR(255) UNIQUE NOT NULL
+  pubkey VARCHAR(255) UNIQUE NOT NULL,
+  whenSignedUp INT NOT NULL DEFAULT 0
 );
 
 INSERT INTO users (pubkey) VALUES ('default'); 
