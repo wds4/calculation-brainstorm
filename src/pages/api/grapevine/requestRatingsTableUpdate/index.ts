@@ -11,12 +11,11 @@ https://calculation-brainstorm.vercel.app/api/grapevine/requestRatingsTableUpdat
 */
 
 type ResponseData = {
+  success: boolean,
   message: string
 }
 
 // const testUrl = 'https://interpretation-brainstorm.vercel.app/api/requestInterpretation?req={"universalInterpretationProtocolID":"recommendedBrainstormNotBotsInterpretationProtocol","parameters":"foo"}'
-
-const interpEngineUrl = 'https://interpretation-brainstorm.vercel.app/api/requestInterpretation?req={"universalInterpretationProtocolID":"recommendedBrainstormNotBotsInterpretationProtocol","parameters":{"context":"notSpam","pubkeys":["e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f"],"depth":5,"follows":{"score":1.0,"confidence":0.05},"mutes":{"score":0.0,"confidence":0.10}}}'
 
 export default async function handler(
   req: NextApiRequest,
@@ -27,12 +26,17 @@ export default async function handler(
     // TODO: support npub
   }
   if (!searchParams.pubkey) {
-    res.status(200).json({ message: 'grapevine/requestRatingsTableUpdate api: pubkey not provided' })
+    const response:ResponseData = {
+      success: false,
+      message: `grapevine/requestRatingsTableUpdate api: pubkey not provided`
+    }
+    res.status(500).json(response)
   }
   if (searchParams.pubkey) {
     // const pubkey1 = 'e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f'
     const pubkey1 = searchParams.pubkey
-    if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
+   if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
+      const interpEngineUrl = `https://interpretation-brainstorm.vercel.app/api/requestInterpretation?req={"universalInterpretationProtocolID":"recommendedBrainstormNotBotsInterpretationProtocol","parameters":{"context":"notSpam","pubkeys":["${pubkey1}"],"depth":5,"follows":{"score":1.0,"confidence":0.05},"mutes":{"score":0.0,"confidence":0.10}}}`
       const currentTimestamp = Math.floor(Date.now() / 1000)
       const client = await db.connect();
       try {
@@ -56,18 +60,35 @@ export default async function handler(
               console.log('!!!!!!!!!!! ratingsTableName: ' + ratingsTableName)
               console.log('!!!!!!!!!!! sRatingsTable: ' + sRatingsTable)
               console.log('!!!!!!!!!!! sDosStats: ' + sDosStats)
-              res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database; another ratingsTable was requested from the interp engine; it was stored locally in sql.'})
+              const response:ResponseData = {
+                success: true,
+                message: 'pubkey ' + pubkey1 + ' already exists in the customer database; another ratingsTable was requested from the interp engine; it was stored locally in sql.'
+              }
+              res.status(200).json(response)
             })
         } else {
-          res.status(200).json({ message: `pubkey ${pubkey1} does not yet exist in the calculation engine customer database` })
+          const response:ResponseData = {
+            success: false,
+            message: `pubkey ${pubkey1} does not yet exist in the calculation engine customer database. Register first before requesting the ratings table.`
+          }
+          res.status(500).json(response)
         }
       } catch (error) {
         console.log(error)
+        const response:ResponseData = {
+          success: false,
+          message: `unknown error`
+        }
+        res.status(500).json(response)
       } finally {
         client.release();
       }
     } else {
-      res.status(200).json({ message: 'the provided pubkey is invalid' })
+      const response:ResponseData = {
+        success: false,
+        message: `the provided pubkey is invalid`
+      }
+      res.status(500).json(response)
     }
   }
 }
