@@ -2,12 +2,12 @@
 Main goal here is to define types for this equation:
 G_out = coreGrapeRankCalculator(G_in, R, P)
 
-G_out:ScorecardsTableObjectV3
-G_in:ScorecardsTableObjectV3
-R:RatingsTableObject
+G_out:ScorecardsWithMetaDataV3
+G_in:ScorecardsV3
+R:Ratings
 P:GrapeRankParameters
 
-Or maybe use wrappers (which include metadata) for G_in and G_out?
+Or maybe use ScorecardsV3 for G_in, but ScorecardsWithMetaDataV3 wrappers (which include metadata) for G_out?
 */
 
 type context = string
@@ -30,7 +30,7 @@ type ratee = pubkey
 type observer = pubkey
 type observee = pubkey
 
-// R: RatingsTable
+// R: Ratings
 
 type RateeObject = {
     [key: ratee]: scoreAndConfidence
@@ -38,11 +38,11 @@ type RateeObject = {
 type RaterObject = {
     [key: rater]: RateeObject
 }
-export type RatingsTableObject = {
+export type Ratings = {
     [key: context]: RaterObject
 }
 
-export const testRatingsTableObject:RatingsTableObject = {
+export const testRatings:Ratings = {
     notSpam: {
         alice: {
             bob: [1.0, 0.05],
@@ -59,13 +59,13 @@ export const testRatingsTableObject:RatingsTableObject = {
     }
 }
 
-// G: ScorecardsTable 
+// G: Scorecards 
 /*
 Multiple versions, depending on which numbers are reported
-ScorecardsTableObjectV0 "scoreAndConfidence" -- 
-ScorecardsTableObjectV1 "scoreAndInput" -- alternate to V0
-ScorecardsTableObjectV2 "fullHouse" -- includes all 4 numbers which is better for running calculations but maybe bad for long term storage
-ScorecardsTableObjectV3 "oExpanded" -- bigger footprint but easier to write code
+ScorecardsV0 "scoreAndConfidence" -- 
+ScorecardsV1 "scoreAndInput" -- alternate to V0
+ScorecardsV2 "fullHouse" -- includes all 4 numbers which is better for running calculations but maybe bad for long term storage
+ScorecardsV3 "oExpanded" -- bigger footprint but easier to write code
 
 Comparisons:
 V0 versus V1: input is cleaner but confidence is easier to use (since influence = score * confidence)
@@ -84,32 +84,32 @@ running calculation using the core grapeRankCalculator:
 functions written to convert from one type to another
 */
 
-// ScorecardsTable Version 0: scoreAndConfidence (SAME AS RATINGS TABLE)
+// Scorecards Version 0: scoreAndConfidence (SAME AS RATINGS TABLE)
 type ObserveeObjectV0 = {
     [key: observee]: scoreAndConfidence
   }
 type ObserverObjectV0 = {
     [key: observer]: ObserveeObjectV0
 }
-export type ScorecardsTableObjectV0 = {
+export type ScorecardsV0 = {
     [key: context]: ObserverObjectV0
 }
 
-// RatingsOrScorecardsTableJointObject
-// Since RatingsTable and ScorecardsTableV0 should be interchangeable, define one that can be either-or
+// RatingsOrScorecardsJointObject
+// Since Ratings and ScorecardsV0 should be interchangeable, define one that can be either-or
 type EeObject = {
     [key: ratee | observee]: scoreAndConfidence
   }
 type ErObject = {
     [key: rater | observer]: EeObject
 }
-export type RatingsOrScorecardsTableJointObject = {
+export type RatingsOrScorecardsJointObject = {
     [key: context]: ErObject
 }
 
 
 
-export const testScorecardsObjectV0:ScorecardsTableObjectV0 = {
+export const testScorecardsV0:ScorecardsV0 = {
     notSpam: {
         alice: {
             bob: [1.0, 0.05],
@@ -126,17 +126,17 @@ export const testScorecardsObjectV0:ScorecardsTableObjectV0 = {
     }
 }
 
-// ScorecardsTable Version 1: scoreAndInput
+// Scorecards Version 1: scoreAndInput
 type ObserveeObjectV1 = {
     [key: pubkey]: scoreAndInput
   }
 type ObserverObjectV1 = {
     [key: pubkey]: ObserveeObjectV1
 }
-export type ScorecardsTableObjectV1 = {
+export type ScorecardsV1 = {
     [key: context]: ObserverObjectV1
 }
-export const testScorecardsObjectV1:ScorecardsTableObjectV1 = {
+export const testScorecardsV1:ScorecardsV1 = {
     notSpam: {
         alice: {
             bob: [1.0, 0.05],
@@ -153,17 +153,17 @@ export const testScorecardsObjectV1:ScorecardsTableObjectV1 = {
     }
 }
 
-// ScorecardsTable Version 2: fullHouse
+// Scorecards Version 2: fullHouse
 type ObserveeObjectV2 = {
     [key: pubkey]: fullHouse
   }
 type ObserverObjectV2 = {
     [key: pubkey]: ObserveeObjectV2
 }
-export type ScorecardsTableObjectV2 = {
+export type ScorecardsV2 = {
     [key: context]: ObserverObjectV2
 }
-export const testScorecardsObjectV2:ScorecardsTableObjectV2 = {
+export const testScorecardsV2:ScorecardsV2 = {
     notSpam: {
         alice: {
             bob: [0.5, 1.0, 0.5, 0.05],
@@ -180,17 +180,17 @@ export const testScorecardsObjectV2:ScorecardsTableObjectV2 = {
     }
 }
 
-// ScorecardsTable Version 3: oExpanded
+// Scorecards Version 3: oExpanded
 type ObserveeObjectV3 = {
     [key: observee]: oExpanded
   }
 type ObserverObjectV3 = {
     [key: observer]: ObserveeObjectV3
 }
-export type ScorecardsTableObjectV3 = {
+export type ScorecardsV3 = {
     [key: context]: ObserverObjectV3
 }
-export const testScorecardsObjectV3:ScorecardsTableObjectV3 = {
+export const testScorecardsV3:ScorecardsV3 = {
     notSpam: {
         alice: {
             bob: {
@@ -215,36 +215,46 @@ export const testScorecardsObjectV3:ScorecardsTableObjectV3 = {
     }
 }
 
-// ScorecardsTable and RatingsTable Wrappers
+// Scorecards and Ratings Wrappers
 
-type ScorecardsTableMetaData = {
+export type ScorecardsMetaData = {
     observer: observer, // the "owner" of the scorecardTable
     grapeRankProtocolUID?: string,
     rigor?: number
 }
 
-type RatingsTableMetaData = {
-    observer: observer // the "owner" of the ratingsTable (i.e. the person who commissioned its creation?)
+type RatingsMetaData = {
+    observer: observer // the "owner" of the Ratings (i.e. the person who commissioned its creation?)
     interpretationPrococolUID?: string
 }
 
-export type ScorecardsTableObjectWrapper = {
-    metaData: ScorecardsTableMetaData
-    data: ScorecardsTableObjectV2
+export type ScorecardsWithMetaDataV3 = {
+    metaData: ScorecardsMetaData
+    data: ScorecardsV3
 }
 
-export type RatingsTableObjectWrapper = {
-    metaData: RatingsTableMetaData
-    data: RatingsTableObject
+export type RatingsWrapper = {
+    metaData: RatingsMetaData
+    data: Ratings
 }
 
 // GrapeRank protocol parameters
-type GrapeRankParameters = {
+export type GrapeRankParameters = {
+    seedUsers: pubkey[],
     rigor: number,
     attenuation: number,
     defaults: {
         score: number,
         confidence: number
+    }
+}
+export const defaultGrapeRankNotSpamParameters:GrapeRankParameters = {
+    seedUsers: [],
+    rigor: 0.25,
+    attenuation: 0.8,
+    defaults: {
+        score: 0,
+        confidence: 0.1
     }
 }
 
