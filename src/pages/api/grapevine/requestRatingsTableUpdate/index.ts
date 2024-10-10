@@ -41,25 +41,21 @@ export default async function handler(
       const client = await db.connect();
       try {
         const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM users WHERE pubkey=${pubkey1}) AS "exists"`
-        console.log(result_exists)
         if (result_exists.rows[0].exists == true) {
           fetch(interpEngineUrl)
             .then((response) => response.json())
             .then(async (data) => {
-              // console.log('!!!!!!!!!!!!!!!!!!!!!! received data: ' + JSON.stringify(data)) 
               const ratingsTableName = 'default'
               const oRatingsTable = data.ratingsTable
               const sRatingsTable = JSON.stringify(oRatingsTable)
               const oDosStats = data.dosData
               const sDosStats = JSON.stringify(oDosStats)
-              // console.log('oRatingsTable: ' + JSON.stringify(oRatingsTable))
+              console.log('!!!!!!!!!!!!!!!! A')
               const result_insert = await client.sql`INSERT INTO ratingsTables (name, pubkey) VALUES (${ratingsTableName}, ${pubkey1}) ON CONFLICT DO NOTHING;`
               const result_update = await client.sql`UPDATE ratingsTables SET ratingsTable=${sRatingsTable}, dosStats=${sDosStats}, lastUpdated=${currentTimestamp} WHERE name=${ratingsTableName} AND pubkey=${pubkey1} ;`
               console.log(typeof result_insert)
               console.log(typeof result_update)
-              console.log('!!!!!!!!!!! ratingsTableName: ' + ratingsTableName)
-              console.log('!!!!!!!!!!! sRatingsTable: ' + sRatingsTable)
-              console.log('!!!!!!!!!!! sDosStats: ' + sDosStats)
+              console.log('!!!!!!!!!!!!!!!! B')
               const response:ResponseData = {
                 success: true,
                 message: 'pubkey ' + pubkey1 + ' already exists in the customer database; another ratingsTable was requested from the interp engine; it was stored locally in sql.'
@@ -67,6 +63,7 @@ export default async function handler(
               res.status(200).json(response)
             })
         } else {
+          console.log('!!!!!!!!!!!!!!!! else A')
           const response:ResponseData = {
             success: false,
             message: `pubkey ${pubkey1} does not yet exist in the calculation engine customer database. Register first before requesting the ratings table.`
@@ -74,21 +71,25 @@ export default async function handler(
           res.status(500).json(response)
         }
       } catch (error) {
-        console.log(error)
+        console.log('!!!!!!!!!!!!!!!! caught error: ' + error)
         const response:ResponseData = {
           success: false,
           message: `unknown error`
         }
         res.status(500).json(response)
       } finally {
+        console.log('!!!!!!!!!!!!!!!! finally ')
         client.release();
       }
     } else {
+      console.log('!!!!!!!!!!!!!!!! else B ')
       const response:ResponseData = {
         success: false,
         message: `the provided pubkey is invalid`
       }
       res.status(500).json(response)
     }
+    console.log('!!!!!!!!!!!!!!!! Y ')
   }
+  console.log('!!!!!!!!!!!!!!!! Z')
 }
