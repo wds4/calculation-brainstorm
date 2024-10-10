@@ -1,3 +1,15 @@
+/*
+Main goal here is to define types for this equation:
+G_out = coreGrapeRankCalculator(G_in, R, P)
+
+G_out:ScorecardsTableObjectV3
+G_in:ScorecardsTableObjectV3
+R:RatingsTableObject
+P:GrapeRankParameters
+
+Or maybe use wrappers (which include metadata) for G_in and G_out?
+*/
+
 type context = string
 type pubkey = string
 type score = number // can refer to a rating as a primary data point or to an average of ratings, so may be referred to as rating, average, or averageScore. min, max depend on the use case (0-1 for notSpam; 0-5 for 5stars or products; may be negative in some use cases). 
@@ -82,6 +94,20 @@ type ObserverObjectV0 = {
 export type ScorecardsTableObjectV0 = {
     [key: context]: ObserverObjectV0
 }
+
+// RatingsOrScorecardsTableJointObject
+// Since RatingsTable and ScorecardsTableV0 should be interchangeable, define one that can be either-or
+type EeObject = {
+    [key: ratee | observee]: scoreAndConfidence
+  }
+type ErObject = {
+    [key: rater | observer]: EeObject
+}
+export type RatingsOrScorecardsTableJointObject = {
+    [key: context]: ErObject
+}
+
+
 
 export const testScorecardsObjectV0:ScorecardsTableObjectV0 = {
     notSpam: {
@@ -210,6 +236,16 @@ export type ScorecardsTableObjectWrapper = {
 export type RatingsTableObjectWrapper = {
     metaData: RatingsTableMetaData
     data: RatingsTableObject
+}
+
+// GrapeRank protocol parameters
+type GrapeRankParameters = {
+    rigor: number,
+    attenuation: number,
+    defaults: {
+        score: number,
+        confidence: number
+    }
 }
 
 // interpretation protocol parameters

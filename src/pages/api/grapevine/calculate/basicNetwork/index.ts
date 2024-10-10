@@ -14,7 +14,7 @@ type ResponseData = {
   message: string
 }
 
-const coreGrapeRankCalculation = (ratingsTableObject:RatingsTableObject) => {
+const coreGrapeRankCalculator = (ratingsTableObject:RatingsTableObject) => {
   console.log(typeof ratingsTableObject)
   return ratingsTableObject
 }
@@ -50,7 +50,7 @@ export default async function handler(
           // const foo:RatingsTableObject = testRatingsTableObject
           // const g:RatingsTableObject = {}
           // const p:RatingsTableObject = {}
-          const gNew:RatingsTableObject = coreGrapeRankCalculation(testRatingsTableObject)
+          const gNew:RatingsTableObject = coreGrapeRankCalculator(testRatingsTableObject)
           console.log('gNew: ' + JSON.stringify(gNew))
         // }
       } catch (error) {
