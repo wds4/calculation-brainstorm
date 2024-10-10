@@ -17,12 +17,6 @@
         "pages/api/grapevine/requestRatingsTableUpdate/*.ts": {
             "maxDuration": 180
         },
-        "grapevine/requestRatingsTableUpdate/*.ts": {
-            "maxDuration": 180
-        },
-        "requestRatingsTableUpdate/*.ts": {
-            "maxDuration": 180
-        },
         "src/pages/api/grapevine/showStoredRatingsTable/*.ts": {
             "maxDuration": 180
         },
