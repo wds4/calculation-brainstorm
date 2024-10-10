@@ -93,7 +93,7 @@ export default async function handler(
     } else {
       const response:ResponseData = {
         success: false,
-        message: `the provided pubkey is invalid`
+        message: `the provided pubkey and / or ratings table name is invalid`
       }
       res.status(200).json(response)
     }
