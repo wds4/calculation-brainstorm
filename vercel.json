@@ -11,16 +11,16 @@
         }
     ],
     "functions": {
-        "pages/api/grapevine/requestRatingsTableUpdate/index.ts": {
+        "pages/api/grapevine/requestRatingsTableUpdate/*.ts": {
             "maxDuration": 180
         },
-        "pages/api/grapevine/showStoredRatingsTable/index.ts": {
+        "pages/api/grapevine/showStoredRatingsTable/*.ts": {
             "maxDuration": 180
         },
-        "src/pages/api/grapevine/requestRatingsTableUpdate/index.ts": {
+        "src/pages/api/grapevine/requestRatingsTableUpdate/*.ts": {
             "maxDuration": 180
         },
-        "src/pages/api/grapevine/showStoredRatingsTable/index.ts": {
+        "src/pages/api/grapevine/showStoredRatingsTable/*.ts": {
             "maxDuration": 180
         }
     }
