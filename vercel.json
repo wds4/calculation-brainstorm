@@ -22,12 +22,6 @@
         },
         "pages/api/grapevine/showStoredRatingsTable/*.ts": {
             "maxDuration": 180
-        },
-        "*/*/*/*/*.ts": {
-            "maxDuration": 180
-        },
-        "*/*/*/*/*/*.ts": {
-            "maxDuration": 180
         }
     }
 }
