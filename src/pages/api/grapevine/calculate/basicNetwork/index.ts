@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { defaultGrapeRankNotSpamParameters, GrapeRankParameters, Ratings, ScorecardsMetaData, ScorecardsV2, ScorecardsV3, ScorecardsWithMetaDataV3, testRatings } from "@/types"
+import { defaultGrapeRankNotSpamParameters, GrapeRankParameters, Ratings, ScorecardsMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, testRatings } from "@/types"
 /*
 to access:
 http://localhost:3000/api/grapevine/calculate/basicNetwork?name=default&pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
