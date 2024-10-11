@@ -29,14 +29,14 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
       const client = await db.connect();
       try {
-        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM users WHERE pubkey=${pubkey1}) AS "exists"`
+        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM customers WHERE pubkey=${pubkey1}) AS "exists"`
         console.log(result_exists)
         if (result_exists.rows[0].exists == true) {
           // do nothing
           console.log('pubkey already exists in database')
           res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database' })
         } else {
-          const result_insert = await client.sql`INSERT INTO users (pubkey) VALUES (${pubkey1})`
+          const result_insert = await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1})`
           console.log(result_insert)
           res.status(200).json({ message: `pubkey ${pubkey1} inserted into the calculation engine customer database` })
         }

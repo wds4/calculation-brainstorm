@@ -46,9 +46,10 @@ CREATE TABLE IF NOT EXISTS users (
   mutesCreatedAt INT DEFAULT 0,
   mutedBy JSONB DEFAULT '[]',
   lastUpdated INT DEFAULT 0,
-  haveFollowsBeenInput boolean DEFAULT false,
+  haveFollowsAndMutesBeenInput boolean DEFAULT false,
   whenLastQueriedFollowsAndMutes INT DEFAULT 0,
-  whenLastInputFollowsAttempt INT DEFAULT 0
+  whenLastInputFollowsAndMutesAttempt INT DEFAULT 0,
+  whenLastCreatedObserverObject INT DEFAULT 0
 );
   `;
       console.log(result)

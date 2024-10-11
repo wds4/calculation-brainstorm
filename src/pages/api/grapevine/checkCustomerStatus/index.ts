@@ -35,7 +35,7 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
       const client = await db.connect();
       try {
-        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM users WHERE pubkey=${pubkey1}) AS "exists"`
+        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM customers WHERE pubkey=${pubkey1}) AS "exists"`
         console.log(result_exists)
         if (result_exists.rows[0].exists == true) {
           // do nothing
@@ -47,8 +47,6 @@ export default async function handler(
           }
           res.status(200).json(response)
         } else {
-          // const result_insert = await client.sql`INSERT INTO users (pubkey) VALUES (${pubkey1})`
-          // console.log(result_insert)
           const response:ResponseData = {
             success: true,
             message: `grapevine calculation engine grapevine/checkCustomerStatus api: pubkey ${pubkey1} does not exist in the calculation engine customer database`,

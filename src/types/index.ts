@@ -87,7 +87,7 @@ functions written to convert from one type to another
 // Scorecards Version 0: scoreAndConfidence (SAME AS RATINGS TABLE)
 type ObserveeObjectV0 = {
     [key: observee]: scoreAndConfidence
-  }
+}
 type ObserverObjectV0 = {
     [key: observer]: ObserveeObjectV0
 }
