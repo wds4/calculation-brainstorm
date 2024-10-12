@@ -1,4 +1,4 @@
-import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, ObserverObjectV3, oExpandedScoreParameters, oInitializedScores, ratee, rater, RaterObject, RaterObjectV0o, RatingsV0o, ScorecardsMetaData, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
+import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, ratee, rater, RaterObjectV0o, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
 import { convertInputToConfidence } from '@/helpers/grapevine' 
 
 export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {

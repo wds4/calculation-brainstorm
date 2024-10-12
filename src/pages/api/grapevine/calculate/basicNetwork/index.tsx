@@ -1,6 +1,8 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { defaultGrapeRankNotSpamParametersWithMedaData, exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork } from "@/types"
+import { exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork } from "@/types"
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
 /*
 to access:
@@ -9,9 +11,7 @@ http://localhost:3000/api/grapevine/calculate/basicNetwork?name=default&pubkey=e
 https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
 */
 
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
-import { coreGrapeRankCalculator_basicGrapevineNetwork } from "./individualProtocols/basicGrapevineNetwork";
+
  
 type ResponseData = {
   success: boolean,
