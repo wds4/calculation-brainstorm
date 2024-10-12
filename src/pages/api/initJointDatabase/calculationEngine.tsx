@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS rawDataSources;
 DROP TABLE IF EXISTS interpretationEngines;
 DROP TABLE IF EXISTS interpretationProtocols_calculationEngine;
 DROP TABLE IF EXISTS grapeRankProtocols;
-DROP TABLE IF EXISTS parameters;
+DROP TABLE IF EXISTS protocolParameters;
 
 -- coreTable2
 CREATE TABLE IF NOT EXISTS rawDataSourceCategories(
@@ -107,14 +107,14 @@ INSERT INTO grapeRankProtocols (slug, parametersJsonSchema ) VALUES ('basic5Star
 -- INSERT INTO grapeRankProtocols (slug, parametersJsonSchema ) VALUES ('basic5StarProductCalculation', '{ properties: { defaultProductScore: { type: float, min: 0, max: 5, default: 0.0 }, defaultProductScoreConfidence: { type: float, min: 0, max: 1, default: 0.05 } }}' );
 
 -- coreTable7
-CREATE TABLE IF NOT EXISTS parameters(
+CREATE TABLE IF NOT EXISTS protocolParameters(
   ID SERIAL PRIMARY KEY,
-  userID INT NOT NULL,
+  customerID INT NOT NULL,
   protocolCategoryTableName TEXT NOT NULL, -- 'interpretationProtocols' or 'grapeRankProtocols' or (coreTable5 or coreTable6) 
   protocolSlug TEXT NOT NULL, -- [protocolCategoryTableName].slug
   -- protocolID  INT NOT NULL, -- alternate to protocolSlug; [protocolCategoryTableName].id
   
-  obj JSONB NOT NULL, -- object that contains the parameters with selected values
+  params JSONB NOT NULL, -- object that contains the parameters with selected values
   
   -- ALTERNATE to selectedParameters:
   parametersNaddr TEXT, -- naddr to an event with the JSON Schema, managed by Brainstorm. Advantage: multiple (competing) services can point to this naddr and ensure compatibility with the wider community
@@ -124,11 +124,11 @@ CREATE TABLE IF NOT EXISTS parameters(
 );
 
 -- defaults
-INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicFollowsInterpretation', '{ "score": 1, "confidence": 0.05 }' );
-INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicMutesInterpretation', '{ "score": 0, "confidence": 0.10 }' );
-INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'basicReportsInterpretation', '{ "score": 0, "confidence": 0.20 }' );
-INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'interpretationProtocols', 'expandedReportsInterpretation', '{ "reportTypesGroupA": { "reportTypes": [ "malware", "illegal", "spam", "impersonation" ], "score": 1, "confidence": 0.5 }, "reportTypesGroupB": { "reportTypes": [ "profanity", "nudity" ], "score": 1, "confidence": 0.02 }, "reportTypesGroupC": { "reportTypes": [ "other" ], "score": 1, "confidence": 0.1 } }' );
-INSERT INTO parameters (userID, protocolCategoryTableName, protocolSlug, obj ) VALUES (1, 'grapeRankProtocols', 'basicGrapevineNetwork', '{ "attenuation": 0.8, "rigor": 0.25, "defaultUserScore": 0, "defaultUserScoreConfidence": 0.01 }' );
+INSERT INTO protocolParameters (customerID, protocolCategoryTableName, protocolSlug, params ) VALUES (1, 'interpretationProtocols', 'basicFollowsInterpretation', '{ "score": 1, "confidence": 0.05 }' );
+INSERT INTO protocolParameters (customerID, protocolCategoryTableName, protocolSlug, params ) VALUES (1, 'interpretationProtocols', 'basicMutesInterpretation', '{ "score": 0, "confidence": 0.10 }' );
+INSERT INTO protocolParameters (customerID, protocolCategoryTableName, protocolSlug, params ) VALUES (1, 'interpretationProtocols', 'basicReportsInterpretation', '{ "score": 0, "confidence": 0.20 }' );
+INSERT INTO protocolParameters (customerID, protocolCategoryTableName, protocolSlug, params ) VALUES (1, 'interpretationProtocols', 'expandedReportsInterpretation', '{ "reportTypesGroupA": { "reportTypes": [ "malware", "illegal", "spam", "impersonation" ], "score": 1, "confidence": 0.5 }, "reportTypesGroupB": { "reportTypes": [ "profanity", "nudity" ], "score": 1, "confidence": 0.02 }, "reportTypesGroupC": { "reportTypes": [ "other" ], "score": 1, "confidence": 0.1 } }' );
+INSERT INTO protocolParameters (customerID, protocolCategoryTableName, protocolSlug, params ) VALUES (1, 'grapeRankProtocols', 'basicGrapevineNetwork', '{ "observer": "self", "context": "notSpam", "seedUsers": [ "self" ], "attenuation": 0.8, "rigor": 0.25, "defaults": { "score": 0, "confidence": 0.01 } }' );
 
   `;
       console.log(result)

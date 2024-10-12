@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { defaultGrapeRankNotSpamParametersWithMedaData, exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o } from "@/types"
+import { defaultGrapeRankNotSpamParametersWithMedaData, exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork } from "@/types"
 
 /*
 to access:
@@ -11,6 +11,7 @@ https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?p
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
+import { coreGrapeRankCalculator_basicGrapevineNetwork } from "./individualProtocols/basicGrapevineNetwork";
  
 type ResponseData = {
   success: boolean,
@@ -40,35 +41,97 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1) && (typeof name == 'string')) ) {
       const client = await db.connect();
       try {
-        // const res1 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1} AND name=${name}`
-        // if (res1.rowCount) {
-          // const oRatingsTable = res1.rows[0].ratingstable
-          // const aContexts = Object.keys(oRatingsTable)
-          // console.log('aContexts: ' + JSON.stringify(aContexts))
-          // const foo:Ratings = exampleRatingsV0
-          // const g:Ratings = {}
-          // const p:Ratings = {}
-
-
-          // REPLACE WITH REAL DATA
-          const ratings:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
-          const params:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
-          const scorecards:ScorecardsV3 = {} // first round scorecards should be empty
-          const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,params)
-
-          // WITH TEST DATA -- SEEMS TO WORK
-          const scorecards_in:ScorecardsV3 = exampleScorecardsV3
-          const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
-          const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(exampleRatingsV0o,scorecards_in,grapeRankParametersWithMetaData)
-          console.log('scorecardsOutWithMetaDataR1: ' + JSON.stringify(scorecardsOutWithMetaDataR1, null, 4))
-          const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(exampleRatingsV0o,scorecardsOutWithMetaDataR1.data,grapeRankParametersWithMetaData)
-          console.log('scorecardsOutWithMetaDataR2: ' + JSON.stringify(scorecardsOutWithMetaDataR2, null, 4))
-        // }
-        const response:ResponseData = {
-          success: true,
-          message: 'api/grapevine/calculate/basicNetwork: made it to the end of the try block'
+        const res0 = await client.sql`SELECT * FROM customers WHERE pubkey=${pubkey1}`
+        if (res0.rowCount == 0) {
+          // return an error because supplied pubkey is not a customer
+          const response:ResponseData = {
+            success: false,
+            message: 'api/grapevine/calculate/basicNetwork: supplied pubkey is not a customer'
+          }
+          res.status(500).json(response)
         }
-        res.status(200).json(response)
+        const resX = await client.sql`SELECT * FROM users WHERE pubkey=${pubkey1}`
+        if (resX.rowCount == 0) {
+          // return an error because pubkey is not in the main user database
+          const response:ResponseData = {
+            success: false,
+            message: 'api/grapevine/calculate/basicNetwork: supplied pubkey is not in the users database; either has not followed anybody, or follows have not been fetched.'
+          }
+          res.status(500).json(response)
+        }
+        if ( (res0.rowCount == 1) && (resX.rowCount == 1) ) {
+          const userID = resX.rows[0].id
+          const customerID = res0.rows[0].id
+          const protocolCategoryTableName = 'grapeRankProtocols'
+          const protocolSlug = 'basicGrapevineNetwork'
+
+          const res_params_default = await client.sql`SELECT * FROM protocolparameters WHERE customerID=1 AND protocolCategoryTableName=${protocolCategoryTableName} AND protocolSlug=${protocolSlug}`
+          const params_def = res_params_default.rows[0].params
+          const sParams_def = JSON.stringify(params_def)
+          const sParams_default = sParams_def.replaceAll('self',userID)
+          const oParams_default = JSON.parse(sParams_default)
+          console.log('default params: ' + JSON.stringify(oParams_default, null, 4))
+          const res1 = await client.sql`SELECT * FROM protocolparameters WHERE customerID=${customerID} AND protocolCategoryTableName=${protocolCategoryTableName} AND protocolSlug=${protocolSlug}`
+          let params_data:GrapeRankParametersBasicNetwork = oParams_default
+          if (res1.rowCount == 1) {
+            const params_cust = res1.rows[0].params
+            const sParams_customer = params_cust.replaceAll('self',userID)
+            const oParams_customer = JSON.parse(sParams_customer)
+            params_data = oParams_customer
+            console.log('default customer: ' + JSON.stringify(oParams_customer, null, 4))
+          } else {
+            console.log('The customer does not have preferred parameters. Default parameters will be used.')
+          }
+          const res2 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
+          if (res2.rowCount) {
+            const oRatingsTable = res2.rows[0].ratingstable
+            console.log('====================== oRatingsTable: ' + JSON.stringify(oRatingsTable))
+            /*
+            // TODO:
+            1. change format of what is stored in ratingstable to be the format like: alice: 'f', zed: 'm'
+            2. write a function to replace f and m with interpreted values
+            3. OR: reolace f and m with interpreted values before it gets into ratingsTable; 
+              use the f and m format in the main users table in the observerObject column (if I decide to use that column)
+            */
+
+
+
+
+            // const aContexts = Object.keys(oRatingsTable)
+            // console.log('aContexts: ' + JSON.stringify(aContexts))
+            // const foo:Ratings = exampleRatingsV0
+            // const g:Ratings = {}
+            // const p:Ratings = {}
+            const params:GrapeRankParametersWithMetaData = {
+              metaData: {
+                grapeRankProtocolUID: 'basicGrapevineNetwork'
+              },
+              data: params_data
+            }
+            // REPLACE WITH REAL DATA
+            const ratings:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
+            
+            // const params:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
+            // const scorecards:ScorecardsV3 = {} // first round scorecards should be empty
+            // const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,params)
+
+            // WITH TEST DATA -- SEEMS TO WORK
+            const scorecards_in:ScorecardsV3 = exampleScorecardsV3
+            // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
+
+            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,params)
+            console.log('scorecardsOutWithMetaDataR1: ' + JSON.stringify(scorecardsOutWithMetaDataR1, null, 4))
+            const scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
+
+              const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
+            console.log('scorecardsOutWithMetaDataR2: ' + JSON.stringify(scorecardsOutWithMetaDataR2, null, 4))
+          }
+          const response:ResponseData = {
+            success: true,
+            message: 'api/grapevine/calculate/basicNetwork: made it to the end of the try block'
+          }
+          res.status(200).json(response)
+        }
       } catch (error) {
         console.log(error)
       } finally {
