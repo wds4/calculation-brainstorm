@@ -40,7 +40,7 @@ export default async function handler(
       const currentTimestamp = Math.floor(Date.now() / 1000)
       const client = await db.connect();
       try {
-        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM users WHERE pubkey=${pubkey1}) AS "exists"`
+        const result_exists = await client.sql`SELECT EXISTS(SELECT 1 FROM customers WHERE pubkey=${pubkey1}) AS "exists"`
         if (result_exists.rows[0].exists == true) {
           fetch(interpEngineUrl)
             .then((response) => response.json())

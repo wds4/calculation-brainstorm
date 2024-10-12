@@ -26,8 +26,9 @@ CREATE TABLE IF NOT EXISTS ratingsTables(
   ID SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL DEFAULT 'default',
   pubkey VARCHAR(255) NOT NULL,
-  ratingsTable JSONB NOT NULL DEFAULT '{}',
-  dosStats JSONB NOT NULL DEFAULT '{}',
+  customerId INT,
+  ratingsWithMetaData JSONB NOT NULL DEFAULT '{}',
+  dosData JSONB NOT NULL DEFAULT '{}',
   lastUpdated INT NOT NULL DEFAULT 0,
   UNIQUE (name, pubkey)
 );
