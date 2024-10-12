@@ -9,6 +9,7 @@ https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=e5
 */
 
 type ResponseData = {
+  success: boolean
   message: string
 }
  
@@ -21,10 +22,13 @@ export default async function handler(
     // TODO: support npub
   }
   if (!searchParams.pubkey) {
-    res.status(200).json({ message: 'grapevine/addNewCustomer api: pubkey not provided' })
+    const response:ResponseData = {
+      success: false,
+      message: 'grapevine/addNewCustomer api: pubkey not provided',
+    }
+    res.status(500).json(response)
   }
   if (searchParams.pubkey) {
-    // const pubkey1 = 'e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f'
     const pubkey1 = searchParams.pubkey
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
       const client = await db.connect();
@@ -34,20 +38,32 @@ export default async function handler(
         if (result_exists.rows[0].exists == true) {
           // do nothing
           console.log('pubkey already exists in database')
-          res.status(200).json({ message: 'pubkey ' + pubkey1 + ' already exists in the customer database' })
+          const response:ResponseData = {
+            success: false,
+            message: `pubkey ${pubkey1} already exists in the customer database`,
+          }
+          res.status(200).json(response)
         } else {
           const result_insert = await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1})`
-          console.log(result_insert)
-          res.status(200).json({ message: `pubkey ${pubkey1} inserted into the calculation engine customer database` })
+          console.log('result_insert: ' + result_insert)
+          // TODO: verify insertion was successful using result_insert
+          const response:ResponseData = {
+            success: true,
+            message: `pubkey ${pubkey1} inserted successfully into the calculation engine customer database`,
+          }
+          res.status(200).json(response)
         }
-        res.status(200).json({ message: 'this is the grapevine/addNewCustomer api' })
       } catch (error) {
         console.log(error)
       } finally {
         client.release();
       }
     } else {
-      res.status(200).json({ message: 'the provided pubkey is invalid' })
+      const response:ResponseData = {
+        success: false,
+        message: 'the provided pubkey is invalid',
+      }
+      res.status(500).json(response)
     }
   }
 }
