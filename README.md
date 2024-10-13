@@ -57,6 +57,37 @@ To fix CORS problems, add `vercel.json`:
 }
 ```
 
+## WORKFLOW
+
+How data is scraped from generic nostr relays
+
+### new customer sign up
+- https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=pk_customer
+    - add pk_customer to customers table
+- https://interpretation-brainstorm.vercel.app/api/nostr/listeners/singleUser?pubkey=pk_customer
+    - add pk_customer to users table
+    - listen for kind 3 and 10000 notes for pk_customer; add pubkeys to users.mutes and users.follows
+- https://interpretation-brainstorm.vercel.app/api/manageData/singleUser/insertFollowsAndMutesIntoUsersTable?pubkey=pk_customer
+    - for pk_customer, insert pubkeys from users.follows and users.mutes into users, so that they all have a userID
+- https://interpretation-brainstorm.vercel.app/api/manageData/singleUser/createObserverObject?pubkey=pk_customer
+    - for pk_customer, create observerObject, which is ultra compact (prefers userIDs; 'f' and 'm' format)
+    - ??? erase users.follows and users.mutes once observerObject is created
+- https://interpretation-brainstorm.vercel.app/api/nostr/listeners/singleUserFollows?pubkey=pk_customer
+    - listen for kind 3 and 10000 notes for all follows of pk_customer in blocks of no more than 1000; do not repeat if this step is already achieved; add pubkeys to users.mutes and users.follows
+- not yet coded
+    - for pk_customer, create DoS summary and store -- where?
+    - for pk_customer, create RatingsTables -- ??? do it quickly using DoS data plus users.observerObjects
+
+
+In customers table, or maybe make two separate tables, need 
+- columns for DoS network in compact format (userID instead of pubkey)
+- column fo ScoreCards in ultra-compact format (userID and f, m format)
+
+### database maintenance
+- listen for kind 3 and 10000 notes for all users who need it, in blocks of no more than 1000
+
+### 
+
 ## Getting Started
 
 First, run the development server:
