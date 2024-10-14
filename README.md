@@ -82,9 +82,17 @@ How data is scraped from generic nostr relays
 In customers table, or maybe make another table, need:
 - column fo ScoreCards in ultra-compact format (userID and f, m format)
 
+
+
 ### db-wide actions
 - which endpoint?
     - listen for kind 3 and 10000 notes for all users who need it, in blocks of no more than 1000
+- STEP 1:
+- STEP 2: http://interpretation-brainstorm.vercel.app/api/manageData/blockOfUsers/insertFollowsAndMutesIntoUsersTable
+    - insert pubkeys from users.follows and users.mutes as new rows into users, so that they all have a userID
+    - also set users.follows=[] and users.mutes=[] after the transfer
+    - THIS IS THE SLOWEST STEP. need to speed it up. A way to batch multiple INSERTS???
+- STEP 3: 
 
 ### 
 

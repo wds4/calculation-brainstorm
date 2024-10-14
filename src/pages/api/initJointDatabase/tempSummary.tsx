@@ -3,8 +3,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 
 /*
 usage:
-http://localhost:3000/api/initJointDatabase/overlap
-https://calculation-brainstorm.vercel.app/api/initJointDatabase/overlap
+http://localhost:3000/api/initJointDatabase/tempSummary
+https://calculation-brainstorm.vercel.app/api/initJointDatabase/tempSummary
 */
 
 type ResponseData = {
@@ -18,9 +18,28 @@ export default async function handler(
     const client = await db.connect();
     try {
       const result = await client.sql`
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ratingsTables;
 DROP TABLE IF EXISTS dosSummaries;
 DROP TABLE IF EXISTS customers;
+
+-- coreTableU
+CREATE TABLE IF NOT EXISTS users (
+  ID SERIAL PRIMARY KEY,
+  pubkey TEXT UNIQUE NOT NULL,
+  observerObject JSONB DEFAULT '{}', -- { id1: f, id2: m, ...  } - later replace follow with [1, 0.05]
+  follows JSONB DEFAULT '[]' NOT NULL,
+  followsCreatedAt INT DEFAULT 0,
+  followers JSONB DEFAULT '[]' NOT NULL,
+  mutes JSONB DEFAULT '[]' NOT NULL,
+  mutesCreatedAt INT DEFAULT 0,
+  mutedBy JSONB DEFAULT '[]' NOT NULL,
+  lastUpdated INT DEFAULT 0,
+  haveFollowsAndMutesBeenInput boolean DEFAULT false,
+  whenLastQueriedFollowsAndMutes INT DEFAULT 0,
+  whenLastInputFollowsAndMutesAttempt INT DEFAULT 0,
+  whenLastCreatedObserverObject INT DEFAULT 0
+);
 
 -- coreTableA
 CREATE TABLE IF NOT EXISTS ratingsTables(
