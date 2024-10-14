@@ -6,6 +6,7 @@ import { verifyPubkeyValidity } from '@/helpers/nip19';
 to access:
 http://localhost:3000/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
 https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
 */
 
 type ResponseData = {
@@ -53,8 +54,8 @@ export default async function handler(
           const result_users = await client.sql`SELECT id FROM users WHERE pubkey=${pubkey1})`
           const userID = result_users.rows[0].id
     
-          await client.sql`INSERT INTO dosSummaries (pubkey, customerId, userId) VALUES (${pubkey1}, ${customerID}, ${userID}) ON CONFLICT DO NOTHING;`
-          await client.sql`INSERT INTO ratingsTables (pubkey, customerId) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
+          await client.sql`INSERT INTO dosSummaries (pubkey, customerid, userid) VALUES (${pubkey1}, ${customerID}, ${userID}) ON CONFLICT DO NOTHING;`
+          await client.sql`INSERT INTO ratingsTables (pubkey, customerid) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
           const response:ResponseData = {
             success: true,
             message: `pubkey ${pubkey1} inserted successfully into the customer, user, dosSummaries, and ratingsTables tables`,
