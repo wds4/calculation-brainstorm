@@ -5,6 +5,7 @@ import { verifyPubkeyValidity } from '@/helpers/nip19';
 /*
 to access:
 http://localhost:3000/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
 https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
 
 */
@@ -45,13 +46,25 @@ export default async function handler(
           }
           res.status(200).json(response)
         } else {
-          await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
-          await client.sql`INSERT INTO users (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
-    
-          const result_customers = await client.sql`SELECT id FROM customers WHERE pubkey=${pubkey1})`
+          console.log('pubkey needs to be inserted!!!')
+
+          const foo1 = await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
+          console.log('foo1:')
+          console.log(foo1)
+
+          const foo2 = await client.sql`INSERT INTO users (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
+          console.log('foo2:')
+          console.log(foo2)
+          
+          const result_customers = await client.sql`SELECT id FROM customers WHERE pubkey=${pubkey1}`
+          console.log('result_customers:')
+          console.log(result_customers)
+          
+          const result_users = await client.sql`SELECT id FROM users WHERE pubkey=${pubkey1}`
+          console.log('result_users:')
+          console.log(result_users)
+
           const customerID = result_customers.rows[0].id
-    
-          const result_users = await client.sql`SELECT id FROM users WHERE pubkey=${pubkey1})`
           const userID = result_users.rows[0].id
     
           await client.sql`INSERT INTO dosSummaries (pubkey, customerid, userid) VALUES (${pubkey1}, ${customerID}, ${userID}) ON CONFLICT DO NOTHING;`
