@@ -44,12 +44,20 @@ export default async function handler(
           }
           res.status(200).json(response)
         } else {
-          const result_insert = await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1})`
-          console.log('result_insert: ' + result_insert)
-          // TODO: verify insertion was successful using result_insert
+          await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
+          await client.sql`INSERT INTO users (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
+    
+          const result_customers = await client.sql`SELECT id FROM customers WHERE pubkey=${pubkey1})`
+          const customerID = result_customers.rows[0].id
+    
+          const result_users = await client.sql`SELECT id FROM users WHERE pubkey=${pubkey1})`
+          const userID = result_users.rows[0].id
+    
+          await client.sql`INSERT INTO dosSummaries (pubkey, customerId, userId) VALUES (${pubkey1}, ${customerID}, ${userID}) ON CONFLICT DO NOTHING;`
+          await client.sql`INSERT INTO ratingsTables (pubkey, customerId) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
           const response:ResponseData = {
             success: true,
-            message: `pubkey ${pubkey1} inserted successfully into the calculation engine customer database`,
+            message: `pubkey ${pubkey1} inserted successfully into the customer, user, dosSummaries, and ratingsTables tables`,
           }
           res.status(200).json(response)
         }

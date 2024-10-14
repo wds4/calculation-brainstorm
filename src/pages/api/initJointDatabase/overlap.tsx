@@ -28,9 +28,17 @@ CREATE TABLE IF NOT EXISTS ratingsTables(
   pubkey VARCHAR(255) NOT NULL,
   customerId INT,
   ratingsWithMetaData JSONB NOT NULL DEFAULT '{}',
-  dosData JSONB NOT NULL DEFAULT '{}',
   lastUpdated INT NOT NULL DEFAULT 0,
   UNIQUE (name, pubkey)
+);
+
+CREATE TABLE IF NOT EXISTS dosSummaries(
+  ID SERIAL PRIMARY KEY,
+  pubkey VARCHAR(255) UNIQUE NOT NULL,
+  userId INT UNIQUE NOT NULL,
+  customerId INT UNIQUE NOT NULL,
+  dosData JSONB NOT NULL DEFAULT '{}',
+  lastUpdated INT NOT NULL DEFAULT 0
 );
 
 -- coreTable1
