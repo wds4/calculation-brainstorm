@@ -4,8 +4,8 @@ import { db } from "@vercel/postgres";
 
 /*
 to access:
-http://localhost:3000/api/nostr
-https://calculation-brainstorm.vercel.app/api/nostr
+http://localhost:3000/api/tests/nostr
+https://calculation-brainstorm.vercel.app/api/tests/nostr
 */
 
 const explicitRelayUrls = [

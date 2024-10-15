@@ -69,6 +69,7 @@ export default async function handler(
     
           await client.sql`INSERT INTO dosSummaries (pubkey, customerid, userid) VALUES (${pubkey1}, ${customerID}, ${userID}) ON CONFLICT DO NOTHING;`
           await client.sql`INSERT INTO ratingsTables (pubkey, customerid) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
+          await client.sql`INSERT INTO scorecardsTables (pubkey, customerid) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
           const response:ResponseData = {
             success: true,
             message: `pubkey ${pubkey1} inserted successfully into the customer, user, dosSummaries, and ratingsTables tables`,

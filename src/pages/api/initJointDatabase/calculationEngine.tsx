@@ -18,12 +18,23 @@ export default async function handler(
     const client = await db.connect();
     try {
       const result = await client.sql`
+DROP TABLE IF EXISTS scorecardsTables;
 DROP TABLE IF EXISTS rawDataSourceCategories;
 DROP TABLE IF EXISTS rawDataSources;
 DROP TABLE IF EXISTS interpretationEngines;
 DROP TABLE IF EXISTS interpretationProtocols_calculationEngine;
 DROP TABLE IF EXISTS grapeRankProtocols;
 DROP TABLE IF EXISTS protocolParameters;
+
+CREATE TABLE scorecardsTables (
+  ID SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL DEFAULT 'notSpam',
+  pubkey VARCHAR(255) NOT NULL,
+  customerId INT,
+  scorecardsWithMetaData JSONB NOT NULL DEFAULT '{}',
+  lastUpdated INT NOT NULL DEFAULT 0,
+  UNIQUE (name, pubkey)
+);
 
 -- coreTable2
 CREATE TABLE IF NOT EXISTS rawDataSourceCategories(

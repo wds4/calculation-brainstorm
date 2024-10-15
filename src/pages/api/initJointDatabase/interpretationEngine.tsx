@@ -51,6 +51,15 @@ CREATE TABLE IF NOT EXISTS users (
   whenLastInputFollowsAndMutesAttempt INT DEFAULT 0,
   whenLastCreatedObserverObject INT DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS events {
+  ID SERIAL PRIMARY KEY,
+  kind INT NOT NULL,
+  eventID VARCHAR(255) NOT NULL,
+  pubkey TEXT NOT NULL,
+  created_at INT NOT NULL,
+  event JSONB NOT NULL
+}
   `;
       console.log(result)
       res.status(200).json({ message: 'initJointDatabase:: All done!' })

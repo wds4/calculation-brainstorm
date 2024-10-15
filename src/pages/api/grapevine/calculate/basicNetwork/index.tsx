@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork } from "@/types"
+import { exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork, RatingsWithMetaDataV0o } from "@/types"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
@@ -15,7 +15,8 @@ https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?p
  
 type ResponseData = {
   success: boolean,
-  message: string
+  message: string,
+  data?: object
 }
  
 export default async function handler(
@@ -84,8 +85,11 @@ export default async function handler(
           }
           const res2 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
           if (res2.rowCount) {
-            const oRatingsTable = res2.rows[0].ratingstable
-            console.log('====================== oRatingsTable: ' + JSON.stringify(oRatingsTable))
+            // const oRatingsTable = res2.rows[0].ratingstable
+            const oRatingsWithMetaData:RatingsWithMetaDataV0o = res2.rows[0].ratingswithmetadata
+            // const oRatingsTable:RatingsV0o = oRatingsWithMetaData.data
+            
+            // console.log('====================== oRatingsTable: ' + JSON.stringify(oRatingsTable))
             /*
             // TODO:
             1. change format of what is stored in ratingstable to be the format like: alice: 'f', zed: 'm'
@@ -109,26 +113,64 @@ export default async function handler(
               data: params_data
             }
             // REPLACE WITH REAL DATA
-            const ratings:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
-            
+            const ratings_test:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
+            console.log(typeof ratings_test)
+            const ratings:RatingsV0o = oRatingsWithMetaData.data
+
             // const params:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
             // const scorecards:ScorecardsV3 = {} // first round scorecards should be empty
             // const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,params)
 
             // WITH TEST DATA -- SEEMS TO WORK
-            const scorecards_in:ScorecardsV3 = exampleScorecardsV3
+            const scorecards_in_test:ScorecardsV3 = exampleScorecardsV3
+            console.log(typeof scorecards_in_test)
+
+            const scorecards_in:ScorecardsV3 = {}
             // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
 
-            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,params)
-            console.log('scorecardsOutWithMetaDataR1: ' + JSON.stringify(scorecardsOutWithMetaDataR1, null, 4))
-            const scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
+            // console.log('====================== ratings: ' + JSON.stringify(ratings))
+            // console.log('====================== scorecards_in: ' + JSON.stringify(scorecards_in))
+            // console.log('====================== params: ' + JSON.stringify(params))
 
-              const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
-            console.log('scorecardsOutWithMetaDataR2: ' + JSON.stringify(scorecardsOutWithMetaDataR2, null, 4))
+            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,params)
+            // console.log('scorecardsOutWithMetaDataR1: ' + JSON.stringify(scorecardsOutWithMetaDataR1, null, 4))
+
+            let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
+            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
+
+            scorecards_next = scorecardsOutWithMetaData.data
+            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecards_next,params)
+            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
+            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
+            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
+            
+            console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
+            
+            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
+
+            const scorecardsTableName = 'notSpam'
+            const currentTimestamp = Math.floor(Date.now() / 1000)
+
+            const result_insert = await client.sql`INSERT INTO scorecardsTables (name, customerid, pubkey) VALUES (${scorecardsTableName}, ${customerID}, ${pubkey1}) ON CONFLICT DO NOTHING;`
+            const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
+
+            console.log('!!!!!! insert' + typeof result_insert)
+            console.log('!!!!!! update' + typeof result_update)
+
+            const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
+            const megabyteSize = sScorecardsWithMetaDataChars / 1048576
+            const response:ResponseData = {
+              success: true,
+              message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
+              data: {
+                megabyteSize
+              }
+            }
+            res.status(200).json(response)
           }
           const response:ResponseData = {
             success: true,
-            message: 'api/grapevine/calculate/basicNetwork: made it to the end of the try block'
+            message: 'api/grapevine/calculate/basicNetwork: made it to the end of the try block',
           }
           res.status(200).json(response)
         }

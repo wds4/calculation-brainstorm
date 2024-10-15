@@ -39,8 +39,11 @@ CREATE TABLE IF NOT EXISTS dosSummaries(
   userId INT UNIQUE NOT NULL,
   customerId INT UNIQUE NOT NULL,
   dosData JSONB NOT NULL DEFAULT '{}',
+  lookupIdsByDos JSONB NOT NULL DEFAULT '{}',
   lastUpdated INT NOT NULL DEFAULT 0
 );
+
+-- ALTER TABLE dosSummaries ADD lookupIdsByDos JSONB NOT NULL DEFAULT '{}'
 
 -- coreTable1
 CREATE TABLE IF NOT EXISTS customers(
