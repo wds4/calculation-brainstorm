@@ -82,7 +82,7 @@ export default async function handler(
                 numObservers,
                 numObservations,
                 megabytes: megabyteSize,
-                // scorecards: oScorecards
+                scorecards: oScorecards
               }
             }
           }
