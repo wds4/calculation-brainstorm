@@ -18,10 +18,21 @@ export default async function handler(
     const client = await db.connect();
     try {
       const result = await client.sql`
+DROP TABLE IF EXISTS scorecardsTables;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ratingsTables;
 DROP TABLE IF EXISTS dosSummaries;
 DROP TABLE IF EXISTS customers;
+
+CREATE TABLE scorecardsTables (
+  ID SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL DEFAULT 'notSpam',
+  pubkey VARCHAR(255) NOT NULL,
+  customerId INT,
+  scorecardsWithMetaData JSONB NOT NULL DEFAULT '{}',
+  lastUpdated INT NOT NULL DEFAULT 0,
+  UNIQUE (name, pubkey)
+);
 
 -- coreTableU
 CREATE TABLE IF NOT EXISTS users (

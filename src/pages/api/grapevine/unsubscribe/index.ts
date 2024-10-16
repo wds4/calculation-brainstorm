@@ -33,8 +33,14 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1)) ) {
       const client = await db.connect();
       try {
-        const result_delete = await client.sql`DELETE FROM customers WHERE pubkey=${pubkey1}`
-        console.log('result_delete: ' + result_delete)
+        const result_delete1 = await client.sql`DELETE FROM customers WHERE pubkey=${pubkey1}`
+        console.log('result_delete1: ' + result_delete1)
+        const result_delete2 = await client.sql`DELETE FROM dosSummaries WHERE pubkey=${pubkey1}`
+        console.log('result_delete2: ' + result_delete2)
+        const result_delete3 = await client.sql`DELETE FROM ratingsTables WHERE pubkey=${pubkey1}`
+        console.log('result_delete3: ' + result_delete3)
+        const result_delete4 = await client.sql`DELETE FROM scorecardsTables WHERE pubkey=${pubkey1}`
+        console.log('result_delete4: ' + result_delete4)
         // TODO: verify deletion was successful using result_delete
         const response:ResponseData = {
           success: true,
