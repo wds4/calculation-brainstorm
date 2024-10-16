@@ -46,9 +46,10 @@ export default async function handler(
           }
           res.status(200).json(response)
         } else {
+          const currentTimestamp = Math.floor(Date.now() / 1000)
           console.log('pubkey needs to be inserted!!!')
 
-          const foo1 = await client.sql`INSERT INTO customers (pubkey) VALUES (${pubkey1}) ON CONFLICT DO NOTHING;`
+          const foo1 = await client.sql`INSERT INTO customers (pubkey, whensignedup) VALUES (${pubkey1}, ${currentTimestamp}) ON CONFLICT DO NOTHING;`
           console.log('foo1:')
           console.log(foo1)
 
