@@ -44,7 +44,23 @@ export default async function handler(
       try {
         const res1 = await client.sql`SELECT * FROM scorecardsTables WHERE pubkey=${pubkey1} AND name=${name}`
 
+        if (!res1.rowCount) {
+          const response:ResponseData = {
+            success: false,
+            message: `error: no scorecards table entry was found for this user and for this scorecards table name.`
+          }
+          res.status(500).json(response)
+        }
         if (res1.rowCount) {
+          const lastUpdated = res1.rows[0].lastupdated
+          if (!lastUpdated) {
+            const response:ResponseData = {
+              success: false,
+              message: `error: scorecards have not been calculated for this user.`
+            }
+            res.status(500).json(response)
+          }
+
           const oScorecardsWithMetadata:ScorecardsWithMetaDataV3 = res1.rows[0].scorecardswithmetadata
           const oScorecards:ScorecardsV3 = oScorecardsWithMetadata.data
           const aContexts:string[] = Object.keys(oScorecards)
@@ -68,8 +84,6 @@ export default async function handler(
           const sScorecards = JSON.stringify(oScorecards)
           const scorecardsChars = sScorecards.length
           const megabyteSize = scorecardsChars / 1048576
-
-          const lastUpdated = res1.rows[0].lastupdated
           const response:ResponseData = {
             success: true,
             message: `Scorecards Table found in our database!!`,
@@ -91,6 +105,11 @@ export default async function handler(
 
       } catch (error) {
         console.log(error)
+        const response:ResponseData = {
+          success: false,
+          message: `error: ${error}`
+        }
+        res.status(500).json(response)
       } finally {
         client.release();
         console.log('============ releasing the db client now')
@@ -100,7 +119,7 @@ export default async function handler(
         success: false,
         message: `the provided pubkey and / or ratings table name is invalid`
       }
-      res.status(200).json(response)
+      res.status(500).json(response)
     }
   }
 }
