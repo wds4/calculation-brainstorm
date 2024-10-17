@@ -7,9 +7,17 @@ import { ScorecardsV3, ScorecardsWithMetaDataV3 } from '@/types';
 returns all data from scorecardsTables and dosSummaries corresponding to the indicated customer
 
 to access:
+pubkey: e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
 http://localhost:3000/api/grapevine/showFullStoredReport?name=notSpam&pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
 
 https://calculation-brainstorm.vercel.app/api/grapevine/showFullStoredReport?name=notSpam&pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
+pubkey: a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
+
+http://localhost:3000/api/grapevine/showFullStoredReport?name=notSpam&pubkey=a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
+
+https://calculation-brainstorm.vercel.app/api/grapevine/showFullStoredReport?name=notSpam&pubkey=a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
 
 */
 
@@ -48,8 +56,19 @@ export default async function handler(
       try {
         const resDosSummaries = await client.sql`SELECT * FROM dosSummaries WHERE pubkey=${pubkey1}`
         const resScorecardsTables = await client.sql`SELECT * FROM scorecardsTables WHERE pubkey=${pubkey1} AND name=${name}`
-
+        console.log('============ A')
         if (resDosSummaries.rowCount && resScorecardsTables.rowCount) {
+          console.log(`============ B: ${resDosSummaries.rowCount} - ${resScorecardsTables.rowCount}`)
+          const lastUpdatedScorecardsTables = resScorecardsTables.rows[0].lastupdated
+          const lastUpdatedDosSummaries = resDosSummaries.rows[0].lastupdated
+          if (!lastUpdatedScorecardsTables || !lastUpdatedDosSummaries) {
+            const response:ResponseData = {
+              success: false,
+              message: `DosSummaries and/or ScorecardsTables have not been created.`
+            }
+            res.status(500).json(response)
+          }
+
           const oScorecardsWithMetadata:ScorecardsWithMetaDataV3 = resScorecardsTables.rows[0].scorecardswithmetadata
           const oScorecards:ScorecardsV3 = oScorecardsWithMetadata.data
           const aContexts:string[] = Object.keys(oScorecards)
@@ -69,13 +88,12 @@ export default async function handler(
               }
             }
           }
-          const lastUpdatedScorecardsTables = resScorecardsTables.rows[0].lastupdated
+          
           const sScorecards = JSON.stringify(oScorecards)
           const scorecardsChars = sScorecards.length
           const megabyteSizeScorecardsTables = scorecardsChars / 1048576
 
           const megabyteSizeDosSummaries = JSON.stringify(resDosSummaries).length / 1048576
-          const lastUpdatedDosSummaries = resDosSummaries.rows[0].lastupdated
           const dosData = resDosSummaries.rows[0].dosdata // this is a small file; show number of pubkeys for each DoS away
           const lookupIdsByDos = resDosSummaries.rows[0].lookupidsbydos // this is a large file; contains the entire list of users (by id from users table) for each DoS away
           
@@ -104,6 +122,7 @@ export default async function handler(
           }
           res.status(200).json(response)
         } else {
+          console.log('============ C')
           const response:ResponseData = {
             success: false,
             message: `Data for this pubkey was not found in both the ScorecardsTables and dosSummaries tables.`
@@ -112,6 +131,11 @@ export default async function handler(
         }
 
       } catch (error) {
+        const response:ResponseData = {
+          success: false,
+          message: `error: ${error}`
+        }
+        res.status(500).json(response)
         console.log(error)
       } finally {
         client.release();
