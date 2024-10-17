@@ -105,10 +105,6 @@ export default async function handler(
             3. OR: reolace f and m with interpreted values before it gets into ratingsTable; 
               use the f and m format in the main users table in the observerObject column (if I decide to use that column)
             */
-
-
-
-
             // const aContexts = Object.keys(oRatingsTable)
             // console.log('aContexts: ' + JSON.stringify(aContexts))
             // const foo:Ratings = exampleRatingsV0
@@ -141,20 +137,25 @@ export default async function handler(
             // console.log('====================== params: ' + JSON.stringify(params))
 
             const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,params)
-            // console.log('scorecardsOutWithMetaDataR1: ' + JSON.stringify(scorecardsOutWithMetaDataR1, null, 4))
+            // let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
 
-            let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
-            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
-
+            // const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
+            const scorecardsOutWithMetaDataR2 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR1.data,params)
+            const scorecardsOutWithMetaDataR3 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR2.data,params)
+            const scorecardsOutWithMetaDataR4 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR3.data,params)
+            const scorecardsOutWithMetaDataR5 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR4.data,params)
+            const scorecardsOutWithMetaDataR6 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR5.data,params)
+            const scorecardsOutWithMetaDataR7 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR6.data,params)
+            /*
             scorecards_next = scorecardsOutWithMetaData.data
-            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecards_next,params)
             scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
             scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
             scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
+            */
             
-            console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
+            // console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
             
-            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
+            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaDataR7)
 
             const scorecardsTableName = 'notSpam'
             const currentTimestamp = Math.floor(Date.now() / 1000)
@@ -172,7 +173,7 @@ export default async function handler(
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
               data: {
                 megabyteSize,
-                scorecardsOutWithMetaData
+                scorecardsOutWithMetaData: scorecardsOutWithMetaDataR7
               }
             }
             res.status(200).json(response)
