@@ -6,12 +6,20 @@ import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
 /*
 to access:
+
+pubkey: e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
 http://localhost:3000/api/grapevine/calculate/basicNetwork?name=default&pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
 
-https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?name=default&pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+
+pubkey: a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
+
+http://localhost:3000/api/grapevine/calculate/basicNetwork?name=default&pubkey=a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
+
+https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?name=default&pubkey=a08175d65051c08b83600abf6f5c18efd455114b4863c65959c92b13ee52f87c
+
 */
-
-
  
 type ResponseData = {
   success: boolean,
@@ -163,7 +171,8 @@ export default async function handler(
               success: true,
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
               data: {
-                megabyteSize
+                megabyteSize,
+                scorecardsOutWithMetaData
               }
             }
             res.status(200).json(response)

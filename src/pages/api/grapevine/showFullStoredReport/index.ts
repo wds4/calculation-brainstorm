@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
 import { ScorecardsV3, ScorecardsWithMetaDataV3 } from '@/types';
+import { arrayToObject } from '@/helpers';
 
 /*
 returns all data from scorecardsTables and dosSummaries corresponding to the indicated customer
@@ -25,6 +26,7 @@ type ResponseData = {
   success: boolean,
   message: string,
   exists?: boolean,
+  megabyteSizePubkeyLookupByUserId?: number,
   megabyteSizeDosSummaries?: number,
   megabyteSizeScorecardsTables?: number,
   data?: object
@@ -56,6 +58,13 @@ export default async function handler(
       try {
         const resDosSummaries = await client.sql`SELECT * FROM dosSummaries WHERE pubkey=${pubkey1}`
         const resScorecardsTables = await client.sql`SELECT * FROM scorecardsTables WHERE pubkey=${pubkey1} AND name=${name}`
+        const resMyUsersData = await client.sql`SELECT id, pubkey FROM users WHERE pubkey=${pubkey1}`;
+        const userId1 = resMyUsersData.rows[0].id
+
+        const resultUsers = await client.sql`SELECT id, pubkey FROM users`;
+
+        const oPubkeyLookupByUserId = arrayToObject(resultUsers.rows, 'id')
+        
         console.log('============ A')
         if (resDosSummaries.rowCount && resScorecardsTables.rowCount) {
           console.log(`============ B: ${resDosSummaries.rowCount} - ${resScorecardsTables.rowCount}`)
@@ -88,7 +97,7 @@ export default async function handler(
               }
             }
           }
-          
+
           const sScorecards = JSON.stringify(oScorecards)
           const scorecardsChars = sScorecards.length
           const megabyteSizeScorecardsTables = scorecardsChars / 1048576
@@ -96,15 +105,28 @@ export default async function handler(
           const megabyteSizeDosSummaries = JSON.stringify(resDosSummaries).length / 1048576
           const dosData = resDosSummaries.rows[0].dosdata // this is a small file; show number of pubkeys for each DoS away
           const lookupIdsByDos = resDosSummaries.rows[0].lookupidsbydos // this is a large file; contains the entire list of users (by id from users table) for each DoS away
-          
+        
+          // iterate through oScorecards and dosData so that only relevant pubkeys are included in userId lookup object
+          const oPubkeyLookupByUserId_pruned:{[key:string]: object} = {}
+          const oObservees = oScorecards.notSpam[userId1]
+          const aObservees = Object.keys(oObservees)
+          oPubkeyLookupByUserId_pruned[userId1] = oPubkeyLookupByUserId[pubkey1]
+          for (let x = 0; x < aObservees.length; x++) {
+            const observeeId = aObservees[x]
+            oPubkeyLookupByUserId_pruned[observeeId] = oPubkeyLookupByUserId[observeeId]
+          }
+
+          const megabyteSizePubkeyLookupByUserId = JSON.stringify(oPubkeyLookupByUserId_pruned).length / 1048576
+
           const response:ResponseData = {
             success: true,
             message: `Data for this pubkey was found in the ScorecardsTables and dosSummaries tables.`,
             exists: true,
+            megabyteSizePubkeyLookupByUserId: megabyteSizePubkeyLookupByUserId,
             megabyteSizeDosSummaries: megabyteSizeDosSummaries,
             megabyteSizeScorecardsTables: megabyteSizeScorecardsTables,
             data: {
-              pubkeyLookupByUserId: {},
+              pubkeyLookupByUserId: oPubkeyLookupByUserId_pruned,
               dosData: {
                 lastUpdated: lastUpdatedDosSummaries,
                 dosData,
