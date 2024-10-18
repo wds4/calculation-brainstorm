@@ -1,16 +1,16 @@
-import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, oScoreAndConfidence, ratee, rater, RaterObjectCV0o, RatingsCV0o, RatingsWithMetaDataCV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
+import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, ratee, rater, RaterObjectV0o, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
 import { convertInputToConfidence } from '@/helpers/grapevine' 
 
-export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratingsWithMetaData:RatingsWithMetaDataCV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {
-    const ratings:RatingsCV0o = ratingsWithMetaData.data
+export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {
+    /*  
     const compactFormat = parametersWithMetaData.metaData.compactFormat
     let oReplacements:{ [key:string]: oScoreAndConfidence } = {}
     if (compactFormat) {
       const ratingsMetaData = ratingsWithMetaData.metaData
       oReplacements = ratingsMetaData.replacements
-
     }
     console.log(`oReplacements: ${JSON.stringify(oReplacements, null, 4)}`)
+    */
     const context = parametersWithMetaData.data.context
     const masterObserver = parametersWithMetaData.data.observer
     ////////////////////////////////
@@ -51,7 +51,7 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratingsWithMetaDat
       }
     }
 
-    const oRatings:RaterObjectCV0o = ratings[context]
+    const oRatings:RaterObjectV0o = ratings[context]
     const aRaters = Object.keys(oRatings)
     const oRaterInfluence:RaterInfluenceLookup = {}
     for (let r=0; r < aRaters.length; r++) {
@@ -104,6 +104,9 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratingsWithMetaDat
       for (let r=0; r < aRaters.length; r++) {
         const rater:rater = aRaters[r]
         if (oRatings[rater] && oRatings[rater][observee]) {
+          const score = oRatings[rater][observee].score
+          const confidence = oRatings[rater][observee].confidence
+          /*
           let score:number = 0
           let confidence:number = 0
           if (compactFormat) {
@@ -116,6 +119,7 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratingsWithMetaDat
             // score = oRatings[rater][observee].score
             // confidence = oRatings[rater][observee].confidence
           }
+          */
           const raterInfluence = oRaterInfluence[rater]
           let weight = raterInfluence * confidence
           if (rater != masterObserver) {

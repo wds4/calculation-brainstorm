@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsCV0o, exampleRatingsWithMetaDataCV0o, RatingsWithMetaDataCV0o, RatingsMetaData } from "@/types"
+import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsWithMetaDataCV0o, RatingsMetaData, RatingsCV0o, RatingsV0o, exampleRatingsWithMetaDataCV0o } from "@/types"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
@@ -26,6 +26,47 @@ type ResponseData = {
   message: string,
   data?: object
 }
+
+const prepareRatings = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
+  const numChars_in = JSON.stringify(oRatingsWithMetaData).length
+  const megabyteSize_in = numChars_in / 1048576
+  console.log(`megabyteSize_in: ${megabyteSize_in}`)
+  // console.log(`oRatingsWithMetaData: ${JSON.stringify(oRatingsWithMetaData, null, 4)}`)
+  const oRatingsIn:RatingsCV0o = oRatingsWithMetaData.data
+  const context = 'notSpam'
+  const oRatingsOut:RatingsV0o = {}
+  oRatingsOut[context] = {}
+  const ratingsMetaData = oRatingsWithMetaData.metaData
+  if (ratingsMetaData?.compactFormat) {
+    const oReplacements = ratingsMetaData.replacements
+    // cycle through ratings
+    const aRaters = Object.keys(oRatingsIn[context])
+    for (let r=0; r < aRaters.length; r++) {
+      const rater:string = aRaters[r]
+      oRatingsOut[context][rater] = {}
+      const aRatees = Object.keys(oRatingsIn[context][rater])
+      for (let z=0; z < aRatees.length; z++) {
+        const ratee:string = aRatees[z]
+        const placeholder:string = oRatingsIn[context][rater][ratee]
+        if (oReplacements[placeholder]) {
+          const score = oReplacements[placeholder].score
+          const confidence = oReplacements[placeholder].confidence
+          oRatingsOut[context][rater][ratee] = {
+            score,
+            confidence
+          }
+        }
+      }
+    }
+  } else {
+    // ratingsOut = oRatingsWithMetaData.data
+  }
+  // console.log(`oRatingsOut: ${JSON.stringify(oRatingsOut, null, 4)}`)
+  const numChars_out = JSON.stringify(oRatingsOut).length
+  const megabyteSize_out = numChars_out / 1048576
+  console.log(`megabyteSize_out: ${megabyteSize_out}`)
+  return oRatingsOut
+}
  
 export default async function handler(
   req: NextApiRequest,
@@ -50,8 +91,9 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1) && (typeof name == 'string')) ) {
       const client = await db.connect();
       try {
-        const res0 = await client.sql`SELECT * FROM customers WHERE pubkey=${pubkey1}`
-        if (res0.rowCount == 0) {
+        const res_customers_customerData = await client.sql`SELECT * FROM customers WHERE pubkey=${pubkey1}`
+        if (res_customers_customerData.rowCount == 0) {
+          // const uID = res_customers_customerData.rows[0].userID
           // return an error because supplied pubkey is not a customer
           const response:ResponseData = {
             success: false,
@@ -59,8 +101,8 @@ export default async function handler(
           }
           res.status(500).json(response)
         }
-        const resX = await client.sql`SELECT * FROM users WHERE pubkey=${pubkey1}`
-        if (resX.rowCount == 0) {
+        const res_users_customerData = await client.sql`SELECT * FROM users WHERE pubkey=${pubkey1}`
+        if (res_users_customerData.rowCount == 0) {
           // return an error because pubkey is not in the main user database
           const response:ResponseData = {
             success: false,
@@ -68,9 +110,9 @@ export default async function handler(
           }
           res.status(500).json(response)
         }
-        if ( (res0.rowCount == 1) && (resX.rowCount == 1) ) {
-          const userID = resX.rows[0].id
-          const customerID = res0.rows[0].id
+        if ( (res_customers_customerData.rowCount == 1) && (res_users_customerData.rowCount == 1) ) {
+          const userID = res_users_customerData.rows[0].id
+          const customerID = res_customers_customerData.rows[0].id
           const protocolCategoryTableName = 'grapeRankProtocols'
           const protocolSlug = 'basicGrapevineNetwork'
 
@@ -80,10 +122,10 @@ export default async function handler(
           const sParams_default = sParams_def.replaceAll('self',userID)
           const oParams_default = JSON.parse(sParams_default)
           console.log('default params: ' + JSON.stringify(oParams_default, null, 4))
-          const res1 = await client.sql`SELECT * FROM protocolparameters WHERE customerID=${customerID} AND protocolCategoryTableName=${protocolCategoryTableName} AND protocolSlug=${protocolSlug}`
+          const res_params_customer = await client.sql`SELECT * FROM protocolparameters WHERE customerID=${customerID} AND protocolCategoryTableName=${protocolCategoryTableName} AND protocolSlug=${protocolSlug}`
           let params_data:GrapeRankParametersBasicNetwork = oParams_default
-          if (res1.rowCount == 1) {
-            const params_cust = res1.rows[0].params
+          if (res_params_customer.rowCount == 1) {
+            const params_cust = res_params_customer.rows[0].params
             const sParams_customer = params_cust.replaceAll('self',userID)
             const oParams_customer = JSON.parse(sParams_customer)
             params_data = oParams_customer
@@ -91,49 +133,39 @@ export default async function handler(
           } else {
             console.log('The customer does not have preferred parameters. Default parameters will be used.')
           }
-          const res2 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
-          if (res2.rowCount) {
-            // const oRatingsTable = res2.rows[0].ratingstable
-            // const oRatingsWithMetaData:RatingsWithMetaDataV0o = res2.rows[0].ratingswithmetadata
+          const res_ratingsTables_customer = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
+          if (res_ratingsTables_customer.rowCount) {
 
-            const oRatingsWithMetaData_test:RatingsWithMetaDataCV0o = exampleRatingsWithMetaDataCV0o
-            const ratings_test:RatingsCV0o = oRatingsWithMetaData_test.data
-            const ratings_metaData_test:RatingsMetaData = oRatingsWithMetaData_test.metaData
+            const oRatingsWithMetaDataCV0o_real:RatingsWithMetaDataCV0o = res_ratingsTables_customer.rows[0].ratingswithmetadata
+            const oRatingsWithMetaDataCV0o:RatingsWithMetaDataCV0o = exampleRatingsWithMetaDataCV0o
 
+            const ratings_metaData_test:RatingsMetaData = oRatingsWithMetaDataCV0o.metaData
             const compactFormat = ratings_metaData_test?.compactFormat
             console.log(compactFormat)
             // const oRatingsTable:RatingsV0o = oRatingsWithMetaData.data
             
-            // console.log('====================== oRatingsTable: ' + JSON.stringify(oRatingsTable))
-            /*
-            // TODO:
-            1. change format of what is stored in ratingstable to be the format like: alice: 'f', zed: 'm'
-            2. write a function to replace f and m with interpreted values
-            3. OR: reolace f and m with interpreted values before it gets into ratingsTable; 
-              use the f and m format in the main users table in the observerObject column (if I decide to use that column)
-            */
-            // const aContexts = Object.keys(oRatingsTable)
-            // console.log('aContexts: ' + JSON.stringify(aContexts))
-            // const foo:Ratings = exampleRatingsV0
-            // const g:Ratings = {}
-            // const p:Ratings = {}
-            const params:GrapeRankParametersWithMetaData = {
+            const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = {
               metaData: {
                 grapeRankProtocolUID: 'basicGrapevineNetwork',
                 compactFormat
               },
               data: params_data
             }
+
+            // const ratings_:RatingsV0o = prepareRatings(oRatingsWithMetaDataCV0o)
+            const ratings:RatingsV0o = prepareRatings(oRatingsWithMetaDataCV0o_real)
+            // console.log(typeof ratings_)
+            
             // REPLACE WITH REAL DATA
             // const ratings_test:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
             // const ratings_test:RatingsCV0o = exampleRatingsCV0o
-            console.log(typeof ratings_test)
+            // 
 
             // const ratings:RatingsV0o = oRatingsWithMetaData.data
 
-            // const params:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
+            // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
             // const scorecards:ScorecardsV3 = {} // first round scorecards should be empty
-            // const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,params)
+            // const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,grapeRankParametersWithMetaData)
 
             // WITH TEST DATA -- SEEMS TO WORK
             // const scorecards_in_test:ScorecardsV3 = exampleScorecardsV3
@@ -144,27 +176,22 @@ export default async function handler(
 
             // console.log('====================== ratings: ' + JSON.stringify(ratings))
             // console.log('====================== scorecards_in: ' + JSON.stringify(scorecards_in))
-            // console.log('====================== params: ' + JSON.stringify(params))
+            // console.log('====================== grapeRankParametersWithMetaData: ' + JSON.stringify(grapeRankParametersWithMetaData))
 
-            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(oRatingsWithMetaData_test,scorecards_in,params)
+            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,grapeRankParametersWithMetaData)
             // let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
 
             // TODO: employ compactFormat; try first with only one iteration
 
-            // const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
+            // const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,grapeRankParametersWithMetaData)
             /*
-            const scorecardsOutWithMetaDataR2 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR1.data,params)
-            const scorecardsOutWithMetaDataR3 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR2.data,params)
-            const scorecardsOutWithMetaDataR4 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR3.data,params)
-            const scorecardsOutWithMetaDataR5 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR4.data,params)
-            const scorecardsOutWithMetaDataR6 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR5.data,params)
-            const scorecardsOutWithMetaDataR7 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR6.data,params)
-            */
-            /*
-            scorecards_next = scorecardsOutWithMetaData.data
-            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
-            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
-            scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
+            const scorecardsOutWithMetaDataR2 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR1.data,grapeRankParametersWithMetaData)
+            const scorecardsOutWithMetaDataR3 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR2.data,grapeRankParametersWithMetaData)
+            
+            const scorecardsOutWithMetaDataR4 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR3.data,grapeRankParametersWithMetaData)
+            const scorecardsOutWithMetaDataR5 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR4.data,grapeRankParametersWithMetaData)
+            const scorecardsOutWithMetaDataR6 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR5.data,grapeRankParametersWithMetaData)
+            const scorecardsOutWithMetaDataR7 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR6.data,grapeRankParametersWithMetaData)
             */
             
             // console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
@@ -172,13 +199,13 @@ export default async function handler(
             const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaDataR1)
 
             const scorecardsTableName = 'notSpam'
-            const currentTimestamp = Math.floor(Date.now() / 1000)
+            // const currentTimestamp = Math.floor(Date.now() / 1000)
 
             const result_insert = await client.sql`INSERT INTO scorecardsTables (name, customerid, pubkey) VALUES (${scorecardsTableName}, ${customerID}, ${pubkey1}) ON CONFLICT DO NOTHING;`
-            const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
+            // const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
 
             console.log('!!!!!! insert' + typeof result_insert)
-            console.log('!!!!!! update' + typeof result_update)
+            // console.log('!!!!!! update' + typeof result_update)
 
             const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
             const megabyteSize = sScorecardsWithMetaDataChars / 1048576
