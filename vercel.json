@@ -11,6 +11,12 @@
         }
     ],
     "functions": {
+        "src/pages/api/grapevine/calculate/*.ts": {
+            "maxDuration": 180
+        },
+        "pages/api/grapevine/calculate/*.ts": {
+            "maxDuration": 180
+        },
         "src/pages/api/grapevine/requestRatingsTableUpdate/*.ts": {
             "maxDuration": 180
         },
