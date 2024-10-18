@@ -11,12 +11,26 @@
         }
     ],
     "functions": {
-        "src/pages/api/grapevine/calculate/*.ts": {
+        "src/pages/api/grapevine/calculate/*.*": {
             "maxDuration": 180
         },
-        "pages/api/grapevine/calculate/*.ts": {
+        "pages/api/grapevine/calculate/*.*": {
             "maxDuration": 180
         },
+        "src/pages/api/grapevine/calculate/basicNetwork/*.*": {
+            "maxDuration": 180
+        },
+        "pages/api/grapevine/calculate/basicNetwork/*.*": {
+            "maxDuration": 180
+        },
+        "src/pages/api/grapevine/calculate/basicNetwork/individualProtocols/*.*": {
+            "maxDuration": 180
+        },
+        "pages/api/grapevine/calculate/basicNetwork/individualProtocols/*.*": {
+            "maxDuration": 180
+        },
+
+
         "src/pages/api/grapevine/requestRatingsTableUpdate/*.ts": {
             "maxDuration": 180
         },
