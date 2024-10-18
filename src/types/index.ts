@@ -20,7 +20,7 @@ type weights = number // sum of weights; used as running score during calculatio
 type products = number // sum of products
 
 type aScoreAndConfidence = [score, confidence]
-type oScoreAndConfidence = { score: score, confidence: confidence }
+export type oScoreAndConfidence = { score: score, confidence: confidence }
 type aScoreAndInput = [score, input]
 type aInfluenceScoreConfidenceInput = [influence, score, confidence, input]
 export type oExpandedScoreParameters = { influence: influence, score: score, confidence: confidence, input: input, weights: weights, products: products }
@@ -79,12 +79,24 @@ export const exampleRatingsV0:RatingsV0 = {
 
 type RateeObjectV0o = {
     [key: ratee]: oScoreAndConfidence
-  }
+}
+
+type RateeObjectCV0o = { // C = compactFormat; Alice: 'f' instead of Alice: { score: 1.0, confidence: 0.05 }
+    [key: ratee]: string
+}
+
 export type RaterObjectV0o = {
     [key: rater]: RateeObjectV0o
 }
+export type RaterObjectCV0o = {
+    [key: rater]: RateeObjectCV0o
+}
+
 export type RatingsV0o = {
     [key: context]: RaterObjectV0o
+}
+export type RatingsCV0o = {
+    [key: context]: RaterObjectCV0o
 }
 
 export const exampleRatingsV0o:RatingsV0o = {
@@ -108,6 +120,31 @@ export const exampleRatingsV0o:RatingsV0o = {
         4: {
             3: { score: 1.0, confidence: 0.05},
             5: { score: 0.0, confidence: 0.1},
+        },
+    }
+}
+
+export const exampleRatingsCV0o:RatingsCV0o = {
+    notSpam: {
+        1: {
+            alice: 'f',
+        },
+        alice: {
+            bob: 'f',
+            charlie: 'f',
+            4: 'f',
+            zed: 'm',
+        },
+        bob: {
+            charlie: 'f',
+            zed: 'm',
+        },
+        zed: {
+            zed: 'f',
+        },
+        4: {
+            3: 'f',
+            5: 'm',
         },
     }
 }
@@ -307,9 +344,11 @@ export type ScorecardsMetaData = {
     rigor?: number
 }
 
-type RatingsMetaData = {
+export type RatingsMetaData = {
     observer: observer // the "owner" of the Ratings (i.e. the person who commissioned its creation?)
     interpretationPrococolUID?: string
+    compactFormat?: boolean
+    replacements: {[key: string]: oScoreAndConfidence}
 }
 
 export type ScorecardsWithMetaDataV3 = {
@@ -327,6 +366,24 @@ export type RatingsWithMetaData = {
 export type RatingsWithMetaDataV0o = {
     metaData: RatingsMetaData
     data: RatingsV0o
+}
+
+export type RatingsWithMetaDataCV0o = {
+    metaData: RatingsMetaData
+    data: RatingsCV0o
+}
+
+export const exampleRatingsWithMetaDataCV0o:RatingsWithMetaDataCV0o = {
+    metaData: {
+        observer: 'Alice',
+        interpretationPrococolUID: 'recommendedBrainstormNotBotsInterpretationProtocol',
+        compactFormat: true,
+        replacements: {
+            f: {"score":1,"confidence":0.05},
+            m: {"score":0,"confidence":0.1}
+        }
+    },
+    data: exampleRatingsCV0o
 }
 
 // GrapeRank protocol parameters
@@ -355,7 +412,8 @@ export type GrapeRankParameters5Star = {
 
 export type GrapeRankParametersWithMetaData = {
     metaData: {
-        grapeRankProtocolUID: string,
+        grapeRankProtocolUID: string
+        compactFormat?: boolean
     },
     data: GrapeRankParametersBasicNetwork
 }

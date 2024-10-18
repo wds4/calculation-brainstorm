@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { exampleScorecardsV3, GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, exampleRatingsV0o, RatingsV0o, GrapeRankParametersBasicNetwork, RatingsWithMetaDataV0o } from "@/types"
+import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsCV0o, exampleRatingsWithMetaDataCV0o, RatingsWithMetaDataCV0o, RatingsMetaData } from "@/types"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
@@ -94,7 +94,14 @@ export default async function handler(
           const res2 = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
           if (res2.rowCount) {
             // const oRatingsTable = res2.rows[0].ratingstable
-            const oRatingsWithMetaData:RatingsWithMetaDataV0o = res2.rows[0].ratingswithmetadata
+            // const oRatingsWithMetaData:RatingsWithMetaDataV0o = res2.rows[0].ratingswithmetadata
+
+            const oRatingsWithMetaData_test:RatingsWithMetaDataCV0o = exampleRatingsWithMetaDataCV0o
+            const ratings_test:RatingsCV0o = oRatingsWithMetaData_test.data
+            const ratings_metaData_test:RatingsMetaData = oRatingsWithMetaData_test.metaData
+
+            const compactFormat = ratings_metaData_test?.compactFormat
+            console.log(compactFormat)
             // const oRatingsTable:RatingsV0o = oRatingsWithMetaData.data
             
             // console.log('====================== oRatingsTable: ' + JSON.stringify(oRatingsTable))
@@ -112,22 +119,25 @@ export default async function handler(
             // const p:Ratings = {}
             const params:GrapeRankParametersWithMetaData = {
               metaData: {
-                grapeRankProtocolUID: 'basicGrapevineNetwork'
+                grapeRankProtocolUID: 'basicGrapevineNetwork',
+                compactFormat
               },
               data: params_data
             }
             // REPLACE WITH REAL DATA
-            const ratings_test:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
+            // const ratings_test:RatingsV0o = exampleRatingsV0o // replace this with data from ratings table (matched to this customer)
+            // const ratings_test:RatingsCV0o = exampleRatingsCV0o
             console.log(typeof ratings_test)
-            const ratings:RatingsV0o = oRatingsWithMetaData.data
+
+            // const ratings:RatingsV0o = oRatingsWithMetaData.data
 
             // const params:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData // replace this with user supplied preferences from grapeRankProtocols table (matched to this customer)
             // const scorecards:ScorecardsV3 = {} // first round scorecards should be empty
             // const scorecardsOutWithMetaData_actualData_R1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards,params)
 
             // WITH TEST DATA -- SEEMS TO WORK
-            const scorecards_in_test:ScorecardsV3 = exampleScorecardsV3
-            console.log(typeof scorecards_in_test)
+            // const scorecards_in_test:ScorecardsV3 = exampleScorecardsV3
+            // console.log(typeof scorecards_in_test)
 
             const scorecards_in:ScorecardsV3 = {}
             // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
@@ -136,16 +146,20 @@ export default async function handler(
             // console.log('====================== scorecards_in: ' + JSON.stringify(scorecards_in))
             // console.log('====================== params: ' + JSON.stringify(params))
 
-            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,params)
+            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(oRatingsWithMetaData_test,scorecards_in,params)
             // let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
 
+            // TODO: employ compactFormat; try first with only one iteration
+
             // const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,params)
+            /*
             const scorecardsOutWithMetaDataR2 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR1.data,params)
             const scorecardsOutWithMetaDataR3 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR2.data,params)
             const scorecardsOutWithMetaDataR4 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR3.data,params)
             const scorecardsOutWithMetaDataR5 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR4.data,params)
             const scorecardsOutWithMetaDataR6 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR5.data,params)
             const scorecardsOutWithMetaDataR7 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR6.data,params)
+            */
             /*
             scorecards_next = scorecardsOutWithMetaData.data
             scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaData.data,params)
@@ -155,7 +169,7 @@ export default async function handler(
             
             // console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
             
-            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaDataR7)
+            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaDataR1)
 
             const scorecardsTableName = 'notSpam'
             const currentTimestamp = Math.floor(Date.now() / 1000)
@@ -173,7 +187,7 @@ export default async function handler(
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
               data: {
                 megabyteSize,
-                scorecardsOutWithMetaData: scorecardsOutWithMetaDataR7
+                scorecardsOutWithMetaData: scorecardsOutWithMetaDataR1
               }
             }
             res.status(200).json(response)

@@ -1,10 +1,12 @@
-import { GrapeRankParametersWithMetaData, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
+import { GrapeRankParametersWithMetaData, RatingsWithMetaDataCV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
 import { coreGrapeRankCalculator_basicGrapevineNetwork } from "./individualProtocols/basicGrapevineNetwork"
 
-export const coreGrapeRankCalculator = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {
+export const coreGrapeRankCalculator = (ratingsWithMetaData:RatingsWithMetaDataCV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {
+  
   const grapeRankProtocolUID = parametersWithMetaData.metaData.grapeRankProtocolUID
+  // const compactFormat = parametersWithMetaData.metaData.compactFormat
   if (grapeRankProtocolUID == 'basicGrapevineNetwork') {
-    const scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator_basicGrapevineNetwork(ratings,scorecardsIn,parametersWithMetaData)
+    const scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator_basicGrapevineNetwork(ratingsWithMetaData,scorecardsIn,parametersWithMetaData)
     return scorecardsOutWithMetaData
   }
   if (grapeRankProtocolUID == 'basic5StarProductCalculation') {
