@@ -1,7 +1,8 @@
-import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, ratee, rater, RaterObjectV0o, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
+import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, rater, RaterObjectV0o, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
 import { convertInputToConfidence } from '@/helpers/grapevine' 
 
-export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData) => {
+export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData,aObservees:observee[]) => {
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork ========== A`)
     /*  
     const compactFormat = parametersWithMetaData.metaData.compactFormat
     let oReplacements:{ [key:string]: oScoreAndConfidence } = {}
@@ -43,6 +44,8 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       [key: rater]: number
     }
 
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork B`)
+
     // make an object of all raters to use as lookup for their current influence; if unknown, set to default
     let oRaterDataLookup:ObserveeObjectV3 = {}
     if (scorecardsIn[context]) {
@@ -50,6 +53,8 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
         oRaterDataLookup = scorecardsIn[context][masterObserver]
       }
     }
+
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork C`)
 
     const oRatings:RaterObjectV0o = ratings[context]
     const aRaters = Object.keys(oRatings)
@@ -67,9 +72,11 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       oRaterInfluence[nextSeedUser] = 1
     }
     
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork D`)
     
     // the ratees in ratings become the observees in scorecardsOut
     // make an array of all observees
+    /*
     const aObservees:observee[] = []
     for (let r=0; r < aRaters.length; r++) {
       const rater:rater = aRaters[r]
@@ -83,6 +90,9 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
         }
       }
     }
+    */
+
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork E`)
     
     // cycle through all observees and calculate weights and products
     const oScores:ObserveeObjectV3 = {}
@@ -132,6 +142,8 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       }
     }
 
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork F`)
+
     // cycle through all the observees and use weights and products to calculate all of the other parameters
     for (let x=0; x < aObservees.length; x++) {
       const observee:observee = aObservees[x]
@@ -158,5 +170,6 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       metaData: mData,
       data: scorecardsOut,
     }
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork Z`)
     return scorecardsOutWithMetaData
 }

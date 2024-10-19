@@ -1,6 +1,6 @@
 import { db } from "@vercel/postgres";
 import { verifyPubkeyValidity } from '@/helpers/nip19';
-import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsWithMetaDataCV0o, RatingsMetaData, RatingsCV0o, RatingsV0o, exampleRatingsWithMetaDataCV0o } from "@/types"
+import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsWithMetaDataCV0o, RatingsMetaData, RatingsCV0o, RatingsV0o, exampleRatingsWithMetaDataCV0o, observee } from "@/types"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
 
@@ -27,7 +27,8 @@ type ResponseData = {
   data?: object
 }
 
-const prepareRatings = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
+const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
+  const aObservees:observee[] = []
   const numChars_in = JSON.stringify(oRatingsWithMetaData).length
   const megabyteSize_in = numChars_in / 1048576
   console.log(`megabyteSize_in: ${megabyteSize_in}`)
@@ -41,12 +42,16 @@ const prepareRatings = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
     const oReplacements = ratingsMetaData.replacements
     // cycle through ratings
     const aRaters = Object.keys(oRatingsIn[context])
-    for (let r=0; r < aRaters.length; r++) {
+    console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
+    for (let r=0; r < Math.min(aRaters.length, 2000); r++) {
       const rater:string = aRaters[r]
       oRatingsOut[context][rater] = {}
       const aRatees = Object.keys(oRatingsIn[context][rater])
-      for (let z=0; z < aRatees.length; z++) {
+      for (let z=0; z < Math.min(aRatees.length, 1000); z++) {
         const ratee:string = aRatees[z]
+        if (!aObservees.includes(ratee)) {
+          aObservees.push(ratee)
+        }
         const placeholder:string = oRatingsIn[context][rater][ratee]
         if (oReplacements[placeholder]) {
           const score = oReplacements[placeholder].score
@@ -62,10 +67,11 @@ const prepareRatings = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
     // ratingsOut = oRatingsWithMetaData.data
   }
   // console.log(`oRatingsOut: ${JSON.stringify(oRatingsOut, null, 4)}`)
+  console.log(`prepareRatingsAndObservees; num observees being processed: ${aObservees.length}`)
   const numChars_out = JSON.stringify(oRatingsOut).length
   const megabyteSize_out = numChars_out / 1048576
   console.log(`megabyteSize_out: ${megabyteSize_out}`)
-  return oRatingsOut
+  return { oRatingsOut, aObservees }
 }
  
 export default async function handler(
@@ -152,8 +158,10 @@ export default async function handler(
               data: params_data
             }
 
-            // const ratings_:RatingsV0o = prepareRatings(oRatingsWithMetaDataCV0o)
-            const ratings:RatingsV0o = prepareRatings(oRatingsWithMetaDataCV0o_real)
+            // const ratings_:RatingsV0o = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o)
+            const oFoo = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o_real)
+            const ratings_prepared:RatingsV0o = oFoo.oRatingsOut
+            const aObservees = oFoo.aObservees
             // console.log(typeof ratings_)
             
             // REPLACE WITH REAL DATA
@@ -171,41 +179,38 @@ export default async function handler(
             // const scorecards_in_test:ScorecardsV3 = exampleScorecardsV3
             // console.log(typeof scorecards_in_test)
 
+            /*
+            // TODO 18Oct2024
+            - prepareObservees: make aObservees only once so don't have to re-do it with every iteration
+            - Use oInfluenceOnly scorecards to save on room 
+            - change prepareRatingsAndObservees to represent score, confidence as an array [a,b] instead of an object:
+              - save on size
+              - maybe faster to look up
+            
+            ALSO
+            increase min number of iterations to see how high I can get it without crashing
+            */
+
             const scorecards_in:ScorecardsV3 = {}
             // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
 
-            // console.log('====================== ratings: ' + JSON.stringify(ratings))
-            // console.log('====================== scorecards_in: ' + JSON.stringify(scorecards_in))
-            // console.log('====================== grapeRankParametersWithMetaData: ' + JSON.stringify(grapeRankParametersWithMetaData))
-
-            const scorecardsOutWithMetaDataR1:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_in,grapeRankParametersWithMetaData)
-            // let scorecards_next:ScorecardsV3 = scorecardsOutWithMetaDataR1.data
-
-            // TODO: employ compactFormat; try first with only one iteration
-
-            // const scorecardsOutWithMetaDataR2:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings,scorecards_next,grapeRankParametersWithMetaData)
-            /*
-            const scorecardsOutWithMetaDataR2 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR1.data,grapeRankParametersWithMetaData)
-            const scorecardsOutWithMetaDataR3 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR2.data,grapeRankParametersWithMetaData)
+            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings_prepared,scorecards_in,grapeRankParametersWithMetaData,aObservees)
+            let numCompletedIterations = 0
+            do {
+              scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings_prepared,scorecardsOutWithMetaData.data,grapeRankParametersWithMetaData,aObservees)
+              numCompletedIterations++
+            } while (numCompletedIterations < 5)
             
-            const scorecardsOutWithMetaDataR4 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR3.data,grapeRankParametersWithMetaData)
-            const scorecardsOutWithMetaDataR5 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR4.data,grapeRankParametersWithMetaData)
-            const scorecardsOutWithMetaDataR6 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR5.data,grapeRankParametersWithMetaData)
-            const scorecardsOutWithMetaDataR7 = coreGrapeRankCalculator(ratings,scorecardsOutWithMetaDataR6.data,grapeRankParametersWithMetaData)
-            */
-            
-            // console.log('scorecardsOutWithMetaData: ' + JSON.stringify(scorecardsOutWithMetaData, null, 4))
-            
-            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaDataR1)
+            const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
 
             const scorecardsTableName = 'notSpam'
-            // const currentTimestamp = Math.floor(Date.now() / 1000)
+            const currentTimestamp = Math.floor(Date.now() / 1000)
 
             const result_insert = await client.sql`INSERT INTO scorecardsTables (name, customerid, pubkey) VALUES (${scorecardsTableName}, ${customerID}, ${pubkey1}) ON CONFLICT DO NOTHING;`
-            // const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
+            const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
 
             console.log('!!!!!! insert' + typeof result_insert)
-            // console.log('!!!!!! update' + typeof result_update)
+            console.log('!!!!!! update' + typeof result_update)
 
             const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
             const megabyteSize = sScorecardsWithMetaDataChars / 1048576
@@ -214,7 +219,7 @@ export default async function handler(
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
               data: {
                 megabyteSize,
-                scorecardsOutWithMetaData: scorecardsOutWithMetaDataR1
+                scorecardsOutWithMetaData: scorecardsOutWithMetaData
               }
             }
             res.status(200).json(response)

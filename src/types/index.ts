@@ -23,7 +23,17 @@ type aScoreAndConfidence = [score, confidence]
 export type oScoreAndConfidence = { score: score, confidence: confidence }
 type aScoreAndInput = [score, input]
 type aInfluenceScoreConfidenceInput = [influence, score, confidence, input]
-export type oExpandedScoreParameters = { influence: influence, score: score, confidence: confidence, input: input, weights: weights, products: products }
+export type oExpandedScoreParameters = { 
+    influence: influence, 
+    score: score, 
+    confidence: confidence, 
+    input: input, 
+    weights: weights, 
+    products: products 
+}
+export type oInfluenceOnly = { 
+    influence: influence
+}
 
 export const oInitializedScores:oExpandedScoreParameters = {
     influence: 0,
@@ -162,7 +172,9 @@ ScorecardsV0 "aScoreAndConfidence" --
 ScorecardsV1 "aScoreAndInput" -- alternate to V0
 ScorecardsV2 "aInfluenceScoreConfidenceInput" -- includes all 4 numbers which is better for running calculations but maybe bad for long term storage
 ScorecardsV3 "oExpandedScoreParameters" -- bigger footprint but easier to write code
-ScorecardsV4 "oInfluence" -- smallest footprint
+ScorecardsV4 "oInfluenceOnly" 
+ScorecardsV5 "aInfluenceOnly" -- smallest footprint
+ScorecardsV6 "aInfluenceAndInput" -- smallest footprint
 
 Comparisons:
 V0 versus V1: input is cleaner but confidence is easier to use (since influence = score * confidence)
