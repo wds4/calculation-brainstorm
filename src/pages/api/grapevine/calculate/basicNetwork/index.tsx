@@ -3,6 +3,7 @@ import { verifyPubkeyValidity } from '@/helpers/nip19';
 import { GrapeRankParametersWithMetaData, ScorecardsV3, ScorecardsWithMetaDataV3, GrapeRankParametersBasicNetwork, RatingsWithMetaDataCV0o, RatingsMetaData, RatingsCV0o, RatingsV0o, exampleRatingsWithMetaDataCV0o, observee } from "@/types"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { coreGrapeRankCalculator } from "./coreGrapeRankCalculator";
+import { secsToTime } from "@/helpers";
 
 /*
 to access:
@@ -27,7 +28,8 @@ type ResponseData = {
   data?: object
 }
 
-const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o) => {
+const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o,startingTimestamp:number) => {
+  console.log(`prepareRatingsAndObservees; ${secsToTime(startingTimestamp)}`)
   const aObservees:observee[] = []
   const numChars_in = JSON.stringify(oRatingsWithMetaData).length
   const megabyteSize_in = numChars_in / 1048576
@@ -43,7 +45,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
     // cycle through ratings
     const aRaters = Object.keys(oRatingsIn[context])
     console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
-    for (let r=0; r < Math.min(aRaters.length, 2000); r++) {
+    for (let r=0; r < Math.min(aRaters.length, 4000); r++) {
       const rater:string = aRaters[r]
       oRatingsOut[context][rater] = {}
       const aRatees = Object.keys(oRatingsIn[context][rater])
@@ -67,7 +69,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
     // ratingsOut = oRatingsWithMetaData.data
   }
   // console.log(`oRatingsOut: ${JSON.stringify(oRatingsOut, null, 4)}`)
-  console.log(`prepareRatingsAndObservees; num observees being processed: ${aObservees.length}`)
+  console.log(`prepareRatingsAndObservees; ${secsToTime(startingTimestamp)}; num observees being processed: ${aObservees.length}`)
   const numChars_out = JSON.stringify(oRatingsOut).length
   const megabyteSize_out = numChars_out / 1048576
   console.log(`megabyteSize_out: ${megabyteSize_out}`)
@@ -97,6 +99,8 @@ export default async function handler(
     if ((typeof pubkey1 == 'string') && (verifyPubkeyValidity(pubkey1) && (typeof name == 'string')) ) {
       const client = await db.connect();
       try {
+        const startingTimestamp = Math.floor(Date.now() / 1000)
+        console.log(`startingTimestamp: ${startingTimestamp}`)
         const res_customers_customerData = await client.sql`SELECT * FROM customers WHERE pubkey=${pubkey1}`
         if (res_customers_customerData.rowCount == 0) {
           // const uID = res_customers_customerData.rows[0].userID
@@ -116,6 +120,9 @@ export default async function handler(
           }
           res.status(500).json(response)
         }
+
+        console.log(`===== A ===== time since starting: ${secsToTime(startingTimestamp)}`)
+
         if ( (res_customers_customerData.rowCount == 1) && (res_users_customerData.rowCount == 1) ) {
           const userID = res_users_customerData.rows[0].id
           const customerID = res_customers_customerData.rows[0].id
@@ -139,7 +146,9 @@ export default async function handler(
           } else {
             console.log('The customer does not have preferred parameters. Default parameters will be used.')
           }
-          const res_ratingsTables_customer = await client.sql`SELECT * FROM ratingsTables WHERE pubkey=${pubkey1}`
+          console.log(`===== B ===== time since starting: ${secsToTime(startingTimestamp)}`)
+          const res_ratingsTables_customer = await client.sql`SELECT ratingswithmetadata FROM ratingsTables WHERE pubkey=${pubkey1}`
+          console.log(`===== C ===== time since starting: ${secsToTime(startingTimestamp)}`)
           if (res_ratingsTables_customer.rowCount) {
 
             const oRatingsWithMetaDataCV0o_real:RatingsWithMetaDataCV0o = res_ratingsTables_customer.rows[0].ratingswithmetadata
@@ -158,8 +167,10 @@ export default async function handler(
               data: params_data
             }
 
-            // const ratings_:RatingsV0o = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o)
-            const oFoo = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o_real)
+            // const ratings_:RatingsV0o = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o,startingTimestamp)
+            console.log(`===== D ===== time since starting: ${secsToTime(startingTimestamp)}`)
+            const oFoo = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o_real,startingTimestamp)
+            console.log(`===== E ===== time since starting: ${secsToTime(startingTimestamp)}`)
             const ratings_prepared:RatingsV0o = oFoo.oRatingsOut
             const aObservees = oFoo.aObservees
             // console.log(typeof ratings_)
@@ -198,19 +209,20 @@ export default async function handler(
             let numCompletedIterations = 0
             do {
               scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings_prepared,scorecardsOutWithMetaData.data,grapeRankParametersWithMetaData,aObservees)
+              console.log(`===== numCompletedIterations: ${numCompletedIterations}; time since starting: ${secsToTime(startingTimestamp)}`)
               numCompletedIterations++
             } while (numCompletedIterations < 5)
             
             const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
 
             const scorecardsTableName = 'notSpam'
-            const currentTimestamp = Math.floor(Date.now() / 1000)
+            // const currentTimestamp = Math.floor(Date.now() / 1000)
 
             const result_insert = await client.sql`INSERT INTO scorecardsTables (name, customerid, pubkey) VALUES (${scorecardsTableName}, ${customerID}, ${pubkey1}) ON CONFLICT DO NOTHING;`
-            const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
+            // const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
 
             console.log('!!!!!! insert' + typeof result_insert)
-            console.log('!!!!!! update' + typeof result_update)
+            // console.log('!!!!!! update' + typeof result_update)
 
             const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
             const megabyteSize = sScorecardsWithMetaDataChars / 1048576
