@@ -46,7 +46,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
     // cycle through ratings
     const aRaters = Object.keys(oRatingsIn[context])
     console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
-    for (let r=0; r < Math.min(aRaters.length, 5000); r++) {
+    for (let r=0; r < Math.min(aRaters.length, 2000); r++) {
       const rater:string = aRaters[r]
       oRatingsOut[context][rater] = {}
       const aRatees = Object.keys(oRatingsIn[context][rater])
@@ -224,13 +224,13 @@ export default async function handler(
             const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
 
             const scorecardsTableName = 'notSpam'
-            // const currentTimestamp = Math.floor(Date.now() / 1000)
+            const currentTimestamp = Math.floor(Date.now() / 1000)
 
             const result_insert = await client.sql`INSERT INTO scorecardsTables (name, customerid, pubkey) VALUES (${scorecardsTableName}, ${customerID}, ${pubkey1}) ON CONFLICT DO NOTHING;`
-            // const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
+            const result_update = await client.sql`UPDATE scorecardsTables SET scorecardswithmetadata=${sScorecardsWithMetaData}, lastupdated=${currentTimestamp} WHERE name=${scorecardsTableName} AND pubkey=${pubkey1} ;`
 
             console.log('!!!!!! insert' + typeof result_insert)
-            // console.log('!!!!!! update' + typeof result_update)
+            console.log('!!!!!! update' + typeof result_update)
 
             const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
             const megabyteSize = sScorecardsWithMetaDataChars / 1048576
