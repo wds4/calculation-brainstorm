@@ -25,6 +25,7 @@ https://calculation-brainstorm.vercel.app/api/grapevine/calculate/basicNetwork?n
 type ResponseData = {
   success: boolean,
   message: string,
+  timestamps?: object,
   data?: object
 }
 
@@ -45,7 +46,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
     // cycle through ratings
     const aRaters = Object.keys(oRatingsIn[context])
     console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
-    for (let r=0; r < Math.min(aRaters.length, 4000); r++) {
+    for (let r=0; r < Math.min(aRaters.length, 500); r++) {
       const rater:string = aRaters[r]
       oRatingsOut[context][rater] = {}
       const aRatees = Object.keys(oRatingsIn[context][rater])
@@ -122,6 +123,7 @@ export default async function handler(
         }
 
         console.log(`===== A ===== time since starting: ${secsToTime(startingTimestamp)}`)
+        const timestampA = secsToTime(startingTimestamp)
 
         if ( (res_customers_customerData.rowCount == 1) && (res_users_customerData.rowCount == 1) ) {
           const userID = res_users_customerData.rows[0].id
@@ -147,7 +149,9 @@ export default async function handler(
             console.log('The customer does not have preferred parameters. Default parameters will be used.')
           }
           console.log(`===== B ===== time since starting: ${secsToTime(startingTimestamp)}`)
+          const timestampB = secsToTime(startingTimestamp)
           const res_ratingsTables_customer = await client.sql`SELECT ratingswithmetadata FROM ratingsTables WHERE pubkey=${pubkey1}`
+          const timestampC = secsToTime(startingTimestamp)
           console.log(`===== C ===== time since starting: ${secsToTime(startingTimestamp)}`)
           if (res_ratingsTables_customer.rowCount) {
 
@@ -169,8 +173,10 @@ export default async function handler(
 
             // const ratings_:RatingsV0o = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o,startingTimestamp)
             console.log(`===== D ===== time since starting: ${secsToTime(startingTimestamp)}`)
+            const timestampD = secsToTime(startingTimestamp)
             const oFoo = prepareRatingsAndObservees(oRatingsWithMetaDataCV0o_real,startingTimestamp)
             console.log(`===== E ===== time since starting: ${secsToTime(startingTimestamp)}`)
+            const timestampE = secsToTime(startingTimestamp)
             const ratings_prepared:RatingsV0o = oFoo.oRatingsOut
             const aObservees = oFoo.aObservees
             // console.log(typeof ratings_)
@@ -192,7 +198,7 @@ export default async function handler(
 
             /*
             // TODO 18Oct2024
-            - prepareObservees: make aObservees only once so don't have to re-do it with every iteration
+            - use reduce() to calculate weighted average
             - Use oInfluenceOnly scorecards to save on room 
             - change prepareRatingsAndObservees to represent score, confidence as an array [a,b] instead of an object:
               - save on size
@@ -204,9 +210,11 @@ export default async function handler(
 
             const scorecards_in:ScorecardsV3 = {}
             // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
-
-            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings_prepared,scorecards_in,grapeRankParametersWithMetaData,aObservees)
             let numCompletedIterations = 0
+            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings_prepared,scorecards_in,grapeRankParametersWithMetaData,aObservees)
+            console.log(`===== numCompletedIterations: ${numCompletedIterations}; time since starting: ${secsToTime(startingTimestamp)}`)
+            const timestampF = secsToTime(startingTimestamp)
+            numCompletedIterations++
             do {
               scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings_prepared,scorecardsOutWithMetaData.data,grapeRankParametersWithMetaData,aObservees)
               console.log(`===== numCompletedIterations: ${numCompletedIterations}; time since starting: ${secsToTime(startingTimestamp)}`)
@@ -229,6 +237,14 @@ export default async function handler(
             const response:ResponseData = {
               success: true,
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
+              timestamps: {
+                timestampA,
+                timestampB,
+                timestampC,
+                timestampD,
+                timestampE,
+                timestampF
+              },
               data: {
                 megabyteSize,
                 scorecardsOutWithMetaData: scorecardsOutWithMetaData
