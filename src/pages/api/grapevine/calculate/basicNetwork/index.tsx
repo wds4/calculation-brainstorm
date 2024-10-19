@@ -46,7 +46,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
     // cycle through ratings
     const aRaters = Object.keys(oRatingsIn[context])
     console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
-    for (let r=0; r < Math.min(aRaters.length, 4000); r++) {
+    for (let r=0; r < Math.min(aRaters.length, 3000); r++) {
       const rater:string = aRaters[r]
       oRatingsOut[context][rater] = {}
       const aRatees = Object.keys(oRatingsIn[context][rater])
