@@ -12,27 +12,27 @@
     ],
     "functions": {
         "src/pages/api/grapevine/calculate/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
         "pages/api/grapevine/calculate/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
         "src/pages/api/grapevine/calculate/basicNetwork/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
         "pages/api/grapevine/calculate/basicNetwork/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
         "src/pages/api/grapevine/calculate/basicNetwork/individualProtocols/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
         "pages/api/grapevine/calculate/basicNetwork/individualProtocols/*.*": {
-            "maxDuration": 180,
+            "maxDuration": 300,
             "memory": 3009
         },
 
