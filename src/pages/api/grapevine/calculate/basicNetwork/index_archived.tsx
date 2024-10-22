@@ -29,6 +29,11 @@ type ResponseData = {
   data?: object
 }
 
+/*******************
+ * Switch from [context][rater][ratee]
+ * to [context][ratee][rater]
+ * to improve perfomance of the grapeRankCalculator
+ */
 const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o,startingTimestamp:number) => {
   console.log(`prepareRatingsAndObservees; ${secsToTime(startingTimestamp)}`)
   const aObservees:observee[] = []
@@ -38,23 +43,20 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
   // console.log(`oRatingsWithMetaData: ${JSON.stringify(oRatingsWithMetaData, null, 4)}`)
   const oRatingsIn:RatingsCV0o = oRatingsWithMetaData.data
   const context = 'notSpam'
-  const aRaters = Object.keys(oRatingsIn[context])
-  console.log(`===== number of raters${aRaters.length}`)
   const oRatingsOut:RatingsV0o = {}
   oRatingsOut[context] = {}
   const ratingsMetaData = oRatingsWithMetaData.metaData
   if (ratingsMetaData?.compactFormat) {
     const oReplacements = ratingsMetaData.replacements
     // cycle through ratings
-    // for (let r=0; r < Math.min(aRaters.length, 10); r++) {
-    for (let r=0; r < aRaters.length; r++) {
+    const aRaters = Object.keys(oRatingsIn[context])
+    console.log(`prepareRatingsAndObservees; num raters in total: ${aRaters.length};`)
+    for (let r=0; r < Math.min(aRaters.length, 300); r++) {
       const rater:string = aRaters[r]
       const aRatees = Object.keys(oRatingsIn[context][rater])
       for (let z=0; z < Math.min(aRatees.length, 1000); z++) {
         const ratee:string = aRatees[z]
-        if (!oRatingsOut[context][ratee]) {
-          oRatingsOut[context][ratee] = {}
-        }
+
         if (!aObservees.includes(ratee)) {
           aObservees.push(ratee)
         }
@@ -62,7 +64,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
         if (oReplacements[placeholder]) {
           const score = oReplacements[placeholder].score
           const confidence = oReplacements[placeholder].confidence
-          oRatingsOut[context][ratee][rater] = {
+          oRatingsOut[context][rater][ratee] = {
             score,
             confidence
           }
@@ -77,7 +79,7 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
   const numChars_out = JSON.stringify(oRatingsOut).length
   const megabyteSize_out = numChars_out / 1048576
   console.log(`megabyteSize_out: ${megabyteSize_out}`)
-  return { oRatingsOut, aObservees, aRaters }
+  return { oRatingsOut, aObservees }
 }
  
 export default async function handler(
@@ -182,7 +184,6 @@ export default async function handler(
             const timestampE = secsToTime(startingTimestamp)
             const ratings_prepared:RatingsV0o = oFoo.oRatingsOut
             const aObservees = oFoo.aObservees
-            const aRaters = oFoo.aRaters
             // console.log(typeof ratings_)
             
             // REPLACE WITH REAL DATA
@@ -215,15 +216,15 @@ export default async function handler(
             const scorecards_in:ScorecardsV3 = {}
             // const grapeRankParametersWithMetaData:GrapeRankParametersWithMetaData = defaultGrapeRankNotSpamParametersWithMedaData
             let numCompletedIterations = 0
-            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings_prepared,scorecards_in,grapeRankParametersWithMetaData,aObservees,aRaters)
+            let scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = coreGrapeRankCalculator(ratings_prepared,scorecards_in,grapeRankParametersWithMetaData,aObservees)
             console.log(`===== numCompletedIterations: ${numCompletedIterations}; time since starting: ${secsToTime(startingTimestamp)}`)
             const timestampF = secsToTime(startingTimestamp)
             numCompletedIterations++
             do {
-              scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings_prepared,scorecardsOutWithMetaData.data,grapeRankParametersWithMetaData,aObservees,aRaters)
+              scorecardsOutWithMetaData = coreGrapeRankCalculator(ratings_prepared,scorecardsOutWithMetaData.data,grapeRankParametersWithMetaData,aObservees)
               console.log(`===== numCompletedIterations: ${numCompletedIterations}; time since starting: ${secsToTime(startingTimestamp)}`)
               numCompletedIterations++
-            } while (numCompletedIterations < 20)
+            } while (numCompletedIterations < 5)
             
             const sScorecardsWithMetaData = JSON.stringify(scorecardsOutWithMetaData)
 

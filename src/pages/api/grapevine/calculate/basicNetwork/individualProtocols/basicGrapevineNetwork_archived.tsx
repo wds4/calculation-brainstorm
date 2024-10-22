@@ -1,8 +1,17 @@
 import { GrapeRankParametersWithMetaData, observee, ObserveeObjectV3, rater, RaterObjectV0o, RatingsV0o, ScorecardsV3, ScorecardsWithMetaDataV3 } from "@/types"
 import { convertInputToConfidence } from '@/helpers/grapevine' 
 
-export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData,aObservees:observee[],aRaters:rater[]) => {
+export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o,scorecardsIn:ScorecardsV3,parametersWithMetaData:GrapeRankParametersWithMetaData,aObservees:observee[]) => {
     console.log(`coreGrapeRankCalculator_basicGrapevineNetwork ========== A`)
+    /*  
+    const compactFormat = parametersWithMetaData.metaData.compactFormat
+    let oReplacements:{ [key:string]: oScoreAndConfidence } = {}
+    if (compactFormat) {
+      const ratingsMetaData = ratingsWithMetaData.metaData
+      oReplacements = ratingsMetaData.replacements
+    }
+    console.log(`oReplacements: ${JSON.stringify(oReplacements, null, 4)}`)
+    */
     const context = parametersWithMetaData.data.context
     const masterObserver = parametersWithMetaData.data.observer
     ////////////////////////////////
@@ -48,9 +57,8 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
     console.log(`coreGrapeRankCalculator_basicGrapevineNetwork C`)
 
     const oRatings:RaterObjectV0o = ratings[context]
-
+    const aRaters = Object.keys(oRatings)
     const oRaterInfluence:RaterInfluenceLookup = {}
-
     for (let r=0; r < aRaters.length; r++) {
       const rater:rater = aRaters[r]
       if (oRaterDataLookup[rater] && oRaterDataLookup[rater].influence) {
@@ -59,13 +67,30 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
         oRaterInfluence[rater] = defaultInfluence // which is usually going to be zero 
       }
     }
-
     for (let x=0; x < aSeedUsers.length; x++) {
       const nextSeedUser = aSeedUsers[x]
       oRaterInfluence[nextSeedUser] = 1
     }
     
     console.log(`coreGrapeRankCalculator_basicGrapevineNetwork D`)
+    
+    // the ratees in ratings become the observees in scorecardsOut
+    // make an array of all observees
+    /*
+    const aObservees:observee[] = []
+    for (let r=0; r < aRaters.length; r++) {
+      const rater:rater = aRaters[r]
+      if (oRatings[rater]) {
+        const aObserveesTemp = Object.keys(oRatings[rater])
+        for (let x=0; x < aObserveesTemp.length; x++) {
+          const ratee:ratee = aObserveesTemp[x]
+          if (!aObservees.includes(ratee)) {
+            aObservees.push(ratee)
+          }
+        }
+      }
+    }
+    */
 
     console.log(`coreGrapeRankCalculator_basicGrapevineNetwork E`)
     
@@ -86,21 +111,34 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       }
       oScores[observee].weights = 0
       oScores[observee].products = 0
-      const aRatersThisCycle = Object.keys(oRatings[observee])
-      for (let r=0; r < aRatersThisCycle.length; r++) {
-        // console.log(`coreGrapeRankCalculator_basicGrapevineNetwork E; r: ${r}`)
-        const rater:rater = aRatersThisCycle[r]
-        const score = oRatings[observee][rater].score
-        const confidence = oRatings[observee][rater].confidence
-
-        const raterInfluence = oRaterInfluence[rater]
-        let weight = raterInfluence * confidence
-        if (rater != masterObserver) {
-          weight = weight * attenuation
+      for (let r=0; r < aRaters.length; r++) {
+        const rater:rater = aRaters[r]
+        if (oRatings[rater] && oRatings[rater][observee]) {
+          const score = oRatings[rater][observee].score
+          const confidence = oRatings[rater][observee].confidence
+          /*
+          let score:number = 0
+          let confidence:number = 0
+          if (compactFormat) {
+            const placeholder = oRatings[rater][observee] // f or m 
+            if (oReplacements[placeholder]) {
+              score = oReplacements[placeholder].score
+              confidence = oReplacements[placeholder].confidence
+            }
+          } else {
+            // score = oRatings[rater][observee].score
+            // confidence = oRatings[rater][observee].confidence
+          }
+          */
+          const raterInfluence = oRaterInfluence[rater]
+          let weight = raterInfluence * confidence
+          if (rater != masterObserver) {
+            weight = weight * attenuation
+          }
+          const product = weight * score
+          oScores[observee].weights += weight
+          oScores[observee].products += product
         }
-        const product = weight * score
-        oScores[observee].weights += weight
-        oScores[observee].products += product
       }
     }
 
