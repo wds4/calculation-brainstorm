@@ -54,10 +54,13 @@ const prepareRatingsAndObservees = (oRatingsWithMetaData:RatingsWithMetaDataCV0o
         const ratee:string = aRatees[z]
         if (!oRatingsOut[context][ratee]) {
           oRatingsOut[context][ratee] = {}
+          aObservees.push(ratee)
         }
+        /*
         if (!aObservees.includes(ratee)) {
           aObservees.push(ratee)
         }
+        */
         const placeholder:string = oRatingsIn[context][rater][ratee]
         if (oReplacements[placeholder]) {
           const score = oReplacements[placeholder].score
