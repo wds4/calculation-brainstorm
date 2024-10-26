@@ -126,6 +126,14 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
         // set to zero ? or omit from final scorecardsOut?
       }
     }
+    scorecardsOut[context][masterObserver][masterObserver] = {
+      score: 1,
+      input: 9999,
+      confidence: 1,
+      influence: 1,
+      weights: 9999,
+      products: 9999
+    }
   
     const scorecardsOutWithMetaData:ScorecardsWithMetaDataV3 = {
       success: true,
