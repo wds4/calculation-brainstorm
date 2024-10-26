@@ -107,6 +107,7 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
     console.log(`coreGrapeRankCalculator_basicGrapevineNetwork F`)
 
     // cycle through all the observees and use weights and products to calculate all of the other parameters
+    let sumOfDifferences = 0
     for (let x=0; x < aObservees.length; x++) {
       const observee:observee = aObservees[x]
       if (oScores[observee].weights) {
@@ -121,6 +122,14 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
           influence: Number(influence.toPrecision(4)),
           weights: Number(oScores[observee].weights.toPrecision(4)),
           products: Number(oScores[observee].products.toPrecision(4))
+        }
+        if (oRaterDataLookup.hasOwnProperty(observee) && oRaterDataLookup[observee].influence) {
+          const changeInInfluence = scorecardsOut[context][masterObserver][observee].influence - oRaterDataLookup[observee].influence
+          if (changeInInfluence) { 
+            // console.log(`changeInInfluence: ${changeInInfluence}`) 
+            const changeSquared = changeInInfluence * changeInInfluence
+            sumOfDifferences += changeSquared
+          }
         }
       } else {
         // set to zero ? or omit from final scorecardsOut?
@@ -140,6 +149,6 @@ export const coreGrapeRankCalculator_basicGrapevineNetwork = (ratings:RatingsV0o
       metaData: mData,
       data: scorecardsOut,
     }
-    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork Z`)
+    console.log(`coreGrapeRankCalculator_basicGrapevineNetwork Z; sumOfDifferences: ${sumOfDifferences}`)
     return scorecardsOutWithMetaData
 }
