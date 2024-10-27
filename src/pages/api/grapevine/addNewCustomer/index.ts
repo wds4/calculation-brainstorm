@@ -4,9 +4,15 @@ import { verifyPubkeyValidity } from '@/helpers/nip19';
 
 /*
 to access:
-http://localhost:3000/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f (straycat)
+http://localhost:3000/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f&nextStep=true
 
-https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f
+https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=e5272de914bd301755c439b88e6959a43c9d2664831f093c51e9c799a16a102f&nextStep=true
+
+043df008b847b66bf991dfb696aac68973eccfa4cedfb87173df79a4cf666ea7 (tonyStark)
+http://localhost:3000/api/grapevine/addNewCustomer?pubkey=043df008b847b66bf991dfb696aac68973eccfa4cedfb87173df79a4cf666ea7&nextStep=true
+
+https://calculation-brainstorm.vercel.app/api/grapevine/addNewCustomer?pubkey=043df008b847b66bf991dfb696aac68973eccfa4cedfb87173df79a4cf666ea7&nextStep=true
 
 */
 
@@ -72,11 +78,14 @@ export default async function handler(
           await client.sql`INSERT INTO ratingsTables (pubkey, customerid) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
           await client.sql`INSERT INTO scorecardsTables (pubkey, customerid) VALUES (${pubkey1}, ${customerID}) ON CONFLICT DO NOTHING;`
 
-          const url = `https://interpretation-brainstorm.vercel.app/api/nostr/listeners/singleUser?pubkey=${pubkey1}`
-          const triggerNextEndpoint = (url:string) => {
-            fetch(url)
+          if (searchParams.nextStep && searchParams.nextStep == 'true') {
+            const url = `https://interpretation-brainstorm.vercel.app/api/nostr/listeners/singleUser?pubkey=${pubkey1}&nextStep=true`
+            console.log(`url: ${url}`)
+            const triggerNextEndpoint = (url:string) => {
+              fetch(url)
+            }
+            triggerNextEndpoint(url)
           }
-          triggerNextEndpoint(url)
 
           const response:ResponseData = {
             success: true,

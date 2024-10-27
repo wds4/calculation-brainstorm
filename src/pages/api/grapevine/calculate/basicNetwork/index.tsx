@@ -241,6 +241,11 @@ export default async function handler(
 
             const sScorecardsWithMetaDataChars = sScorecardsWithMetaData.length
             const megabyteSize = sScorecardsWithMetaDataChars / 1048576
+
+            if (searchParams.sendMessageConfirmation && searchParams.sendMessageConfirmation == 'true') {
+              // TO DO: send direct message confirmation that calculation has been completed
+            }
+
             const response:ResponseData = {
               success: true,
               message: 'api/grapevine/calculate/basicNetwork: calculations successful!',
