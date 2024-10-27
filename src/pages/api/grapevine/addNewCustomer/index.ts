@@ -80,7 +80,7 @@ export default async function handler(
 
           if (searchParams.nextStep && searchParams.nextStep == 'true') {
             const url = `https://interpretation-brainstorm.vercel.app/api/nostr/listeners/singleUser?pubkey=${pubkey1}&nextStep=true`
-            console.log(`url: ${url}`)
+            console.log(`========== url: ${url}`)
             const triggerNextEndpoint = (url:string) => {
               fetch(url)
             }
