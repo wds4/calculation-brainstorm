@@ -259,7 +259,7 @@ export default async function handler(
               },
               data: {
                 megabyteSize,
-                scorecardsOutWithMetaData: scorecardsOutWithMetaData
+                // scorecardsOutWithMetaData: scorecardsOutWithMetaData
               }
             }
             res.status(200).json(response)
